@@ -2,11 +2,16 @@
   "name": "todoist-sync",
   "main": "./lib/todoist-sync",
   "version": "0.0.1",
-  "description": "Provides sync capabilities between inkdrop books/notes and Todoist projects/todos",
+  "description": "An Inkdrop plugin to synchronise notebooks and notes with Todoist projects and tasks.",
   "keywords": [
     "todoist",
     "projects",
-    "todos"
+    "tasks",
+    "todos",
+    "sync",
+    "synchronise",
+    "import",
+    "export"
   ],
   "repository": "https://github.com/manuelsteiner/inkdrop-todoist-sync",
   "license": "MIT",
