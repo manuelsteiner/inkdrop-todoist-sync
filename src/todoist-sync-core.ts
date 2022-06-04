@@ -244,7 +244,7 @@ export class TodoistSyncCore {
       );
     }
 
-    const book = await this.createBookHierarchyToRoot(project);
+    let book = await this.createBookHierarchyToRoot(project);
 
     if (!book) {
       throw new Error(
@@ -254,6 +254,22 @@ export class TodoistSyncCore {
           task.id +
           '.'
       );
+    }
+
+    if(inkdrop.config.get('todoist-sync.importSectionsAsNotebooks') && task.sectionId) {
+      const section: Section | null = this.getTodoistSectionById(task.sectionId);
+
+      if (!section) {
+        throw new Error(
+            'Could not find Todoist section ' +
+            task.sectionId +
+            ' for task ' +
+            task.id +
+            '.'
+        );
+      }
+
+      book = this.getBookByNameAndParent(section.name, book) ?? (await this.createBook(section.name, book));
     }
 
     if (book && !this.bookContainsNoteWithTitle(book, task.content)) {
@@ -320,18 +336,18 @@ export class TodoistSyncCore {
     forceExport?: boolean
   ) {
     for (const note of notes) {
-      try {
-        projectName
-          ? await this.exportNoteToProjectWithName(
-              note,
-              projectName,
-              forceExport
-            )
-          : await this.exportNote(note, undefined, forceExport);
-      } catch (error) {
-        inkdrop.logger.error('Exporting single note failed. Details: ' + error);
-        throw new Error('Exporting single note failed.');
-      }
+      // try {
+         projectName
+           ? await this.exportNoteToProjectWithName(
+               note,
+               projectName,
+               forceExport
+             )
+           : await this.exportNote(note, undefined, forceExport);
+      // } catch (error) {
+      //   inkdrop.logger.error('Exporting single note failed. Details: ' + error);
+      //   throw new Error('Exporting single note failed.');
+      // }
     }
   }
 
@@ -345,6 +361,7 @@ export class TodoistSyncCore {
     }
 
     const book = this.getBookById(note.bookId);
+    let project: Project | undefined = undefined;
 
     if (!book) {
       inkdrop.logger.error(
@@ -355,8 +372,34 @@ export class TodoistSyncCore {
       );
     }
 
-    const project =
-      todoistProject ?? (await this.createTodoistProjectHierarchyToRoot(book));
+    if (
+      inkdrop.config.get('todoist-sync.exportNotebooksAsSections') &&
+      !inkdrop.config.get('todoist-sync.exportSection').length &&
+      !todoistProject &&
+      book.parentBookId &&
+      !this.getSubBooks(book).length &&
+      !this.getTodoistProjectHierarchyByBookHierarchy(
+        this.getBookHierarchy(book)
+      )
+    ) {
+      const parentBook: Book | null = this.getBookById(book.parentBookId);
+
+      if (!parentBook) {
+        throw new Error(
+          'Could not find Todoist project for book ' +
+            book.parentBookId +
+            ' to attach note ' +
+            note._id +
+            '.'
+        );
+      }
+
+      project = await this.createTodoistProjectHierarchyToRoot(parentBook);
+    } else {
+      project =
+        todoistProject ??
+        (await this.createTodoistProjectHierarchyToRoot(book));
+    }
 
     if (!project) {
       throw new Error(
@@ -375,6 +418,16 @@ export class TodoistSyncCore {
       let section: Section | undefined = undefined;
 
       if (
+        inkdrop.config.get('todoist-sync.exportNotebooksAsSections') &&
+        !inkdrop.config.get('todoist-sync.exportSection').length &&
+        book.parentBookId &&
+        !this.getSubBooks(book).length &&
+        project.name.trim() === this.getBookById(book.parentBookId)?.name.trim()
+      ) {
+        section =
+          this.getTodoistSectionByNameAndProject(book.name, project) ??
+          (await this.createTodoistSection(book.name, project));
+      } else if (
         inkdrop.config.get('todoist-sync.exportSection') &&
         !this.todoistProjectContainsSectionWithName(
           project,
@@ -636,20 +689,16 @@ export class TodoistSyncCore {
   }
 
   private getBookById(bookId: string): Book | null {
-    const book = this.books.filter(book => book._id === bookId);
-
-    return book.length ? book[0] : null;
+    return this.books.find(book => book._id === bookId) ?? null;
   }
 
   private getBookByNameAndParent(name: string, parent?: Book): Book | null {
-    const book = this.books.filter(
+    return this.books.find(
       book =>
         book.name.trim() === name.trim() &&
         ((parent && book.parentBookId === parent._id) ||
           (!parent && !book.parentBookId))
-    );
-
-    return book.length ? book[0] : null;
+    ) ?? null;
   }
 
   private getRootBooks(): Book[] {
@@ -964,33 +1013,27 @@ export class TodoistSyncCore {
   }
 
   private getTodoistProjectById(projectId: number): Project | null {
-    const project = this.todoistProjects.filter(
+    return this.todoistProjects.find(
       project => project.id === projectId
-    );
-
-    return project.length ? project[0] : null;
+    ) ?? null;
   }
 
   private getTodoistProjectByName(name: string): Project | null {
-    const project = this.todoistProjects.filter(
+    return this.todoistProjects.find(
       project => project.name.trim() === name.trim()
-    );
-
-    return project.length ? project[0] : null;
+    ) ?? null;
   }
 
   private getTodoistProjectByNameAndParent(
     name: string,
     parent?: Project
   ): Project | null {
-    const project = this.todoistProjects.filter(
+   return this.todoistProjects.find(
       project =>
         project.name.trim() === name.trim() &&
         ((parent && project.parentId === parent.id) ||
           (!parent && project.parentId === undefined))
-    );
-
-    return project.length ? project[0] : null;
+    ) ?? null;
   }
 
   private getTodoistRootProjects(): Project[] {
@@ -1012,15 +1055,15 @@ export class TodoistSyncCore {
       );
 
       if (!currentTodoistProject) {
-        inkdrop.logger.error(
-          'Getting Todoist project hierarchy for book hierarchy ' +
-            bookHierarchy
-              .map(book => {
-                return book.name;
-              })
-              .join(', ') +
-            ' failed.'
-        );
+        //inkdrop.logger.error('Error');
+        //   'Getting Todoist project hierarchy for book hierarchy ' +
+        //     bookHierarchy
+        //       .map(book => {
+        //         return book.name;
+        //       })
+        //       .join(', ') +
+        //     ' failed.'
+        // );
         return null;
       }
 
@@ -1086,12 +1129,26 @@ export class TodoistSyncCore {
     );
   }
 
-  private getTodoistSectionByName(name: string): Section | null {
-    const section = this.todoistSections.filter(
-      section => section.name.trim() === name.trim()
-    );
+  private getTodoistSectionById(sectionId: number): Section | null {
+    return this.todoistSections.find(
+        section => section.id === sectionId
+    ) ?? null;
+  }
 
-    return section.length ? section[0] : null;
+  private getTodoistSectionByName(name: string): Section | null {
+    return this.todoistSections.find(
+      section => section.name.trim() === name.trim()
+    ) ?? null;
+  }
+
+  private getTodoistSectionByNameAndProject(
+    name: string,
+    project: Project
+  ): Section | null {
+    return this.todoistSections.find(
+      section =>
+        section.name.trim() === name.trim() && section.projectId === project.id
+    ) ?? null;
   }
 
   private getTodoistSectionTasks(section: Section): Task[] {

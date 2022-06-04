@@ -81,7 +81,9 @@ export declare class TodoistSyncCore {
     private getTodoistProjectSubTasks;
     private getTodoistSectionsFromString;
     private getTodoistSectionsByNames;
+    private getTodoistSectionById;
     private getTodoistSectionByName;
+    private getTodoistSectionByNameAndProject;
     private getTodoistSectionTasks;
     private todoistTaskCanBeImported;
     private getTodoistSubTasks;
