@@ -1,3 +1,3 @@
 # inkdrop-todoist-sync
 
-An inkdrop plugin to synchronise notebooks and notes with Todoist projects and tasks.
+An Inkdrop plugin to synchronise notebooks and notes with Todoist projects and tasks.
