@@ -278,17 +278,17 @@ module.exports = {
     inkdrop.commands.add(document.body, {
       'todoist-sync:export-selected-books': async () => {
         // try {
-           inkdrop.notifications.addInfo('Todoist export started', {
-             detail: 'Exporting selected projects.',
-             dismissable: true,
-           });
+        inkdrop.notifications.addInfo('Todoist export started', {
+          detail: 'Exporting selected projects.',
+          dismissable: true,
+        });
 
-           await (await TodoistSyncCore.construct()).exportSelectedBooks();
+        await (await TodoistSyncCore.construct()).exportSelectedBooks();
 
-           inkdrop.notifications.addSuccess('Todoist export finished', {
-             detail: 'Exporting selected projects finished.',
-             dismissable: true,
-           });
+        inkdrop.notifications.addSuccess('Todoist export finished', {
+          detail: 'Exporting selected projects finished.',
+          dismissable: true,
+        });
         // } catch (error) {
         //   inkdrop.logger.error(
         //     'todoist-sync:export-selected-books: Exporting selected notebooks failed. Details: ' +

@@ -256,12 +256,17 @@ export class TodoistSyncCore {
       );
     }
 
-    if(inkdrop.config.get('todoist-sync.importSectionsAsNotebooks') && task.sectionId) {
-      const section: Section | null = this.getTodoistSectionById(task.sectionId);
+    if (
+      inkdrop.config.get('todoist-sync.importSectionsAsNotebooks') &&
+      task.sectionId
+    ) {
+      const section: Section | null = this.getTodoistSectionById(
+        task.sectionId
+      );
 
       if (!section) {
         throw new Error(
-            'Could not find Todoist section ' +
+          'Could not find Todoist section ' +
             task.sectionId +
             ' for task ' +
             task.id +
@@ -269,7 +274,9 @@ export class TodoistSyncCore {
         );
       }
 
-      book = this.getBookByNameAndParent(section.name, book) ?? (await this.createBook(section.name, book));
+      book =
+        this.getBookByNameAndParent(section.name, book) ??
+        (await this.createBook(section.name, book));
     }
 
     if (book && !this.bookContainsNoteWithTitle(book, task.content)) {
@@ -337,13 +344,9 @@ export class TodoistSyncCore {
   ) {
     for (const note of notes) {
       // try {
-         projectName
-           ? await this.exportNoteToProjectWithName(
-               note,
-               projectName,
-               forceExport
-             )
-           : await this.exportNote(note, undefined, forceExport);
+      projectName
+        ? await this.exportNoteToProjectWithName(note, projectName, forceExport)
+        : await this.exportNote(note, undefined, forceExport);
       // } catch (error) {
       //   inkdrop.logger.error('Exporting single note failed. Details: ' + error);
       //   throw new Error('Exporting single note failed.');
@@ -693,12 +696,14 @@ export class TodoistSyncCore {
   }
 
   private getBookByNameAndParent(name: string, parent?: Book): Book | null {
-    return this.books.find(
-      book =>
-        book.name.trim() === name.trim() &&
-        ((parent && book.parentBookId === parent._id) ||
-          (!parent && !book.parentBookId))
-    ) ?? null;
+    return (
+      this.books.find(
+        book =>
+          book.name.trim() === name.trim() &&
+          ((parent && book.parentBookId === parent._id) ||
+            (!parent && !book.parentBookId))
+      ) ?? null
+    );
   }
 
   private getRootBooks(): Book[] {
@@ -1013,27 +1018,31 @@ export class TodoistSyncCore {
   }
 
   private getTodoistProjectById(projectId: number): Project | null {
-    return this.todoistProjects.find(
-      project => project.id === projectId
-    ) ?? null;
+    return (
+      this.todoistProjects.find(project => project.id === projectId) ?? null
+    );
   }
 
   private getTodoistProjectByName(name: string): Project | null {
-    return this.todoistProjects.find(
-      project => project.name.trim() === name.trim()
-    ) ?? null;
+    return (
+      this.todoistProjects.find(
+        project => project.name.trim() === name.trim()
+      ) ?? null
+    );
   }
 
   private getTodoistProjectByNameAndParent(
     name: string,
     parent?: Project
   ): Project | null {
-   return this.todoistProjects.find(
-      project =>
-        project.name.trim() === name.trim() &&
-        ((parent && project.parentId === parent.id) ||
-          (!parent && project.parentId === undefined))
-    ) ?? null;
+    return (
+      this.todoistProjects.find(
+        project =>
+          project.name.trim() === name.trim() &&
+          ((parent && project.parentId === parent.id) ||
+            (!parent && project.parentId === undefined))
+      ) ?? null
+    );
   }
 
   private getTodoistRootProjects(): Project[] {
@@ -1130,25 +1139,30 @@ export class TodoistSyncCore {
   }
 
   private getTodoistSectionById(sectionId: number): Section | null {
-    return this.todoistSections.find(
-        section => section.id === sectionId
-    ) ?? null;
+    return (
+      this.todoistSections.find(section => section.id === sectionId) ?? null
+    );
   }
 
   private getTodoistSectionByName(name: string): Section | null {
-    return this.todoistSections.find(
-      section => section.name.trim() === name.trim()
-    ) ?? null;
+    return (
+      this.todoistSections.find(
+        section => section.name.trim() === name.trim()
+      ) ?? null
+    );
   }
 
   private getTodoistSectionByNameAndProject(
     name: string,
     project: Project
   ): Section | null {
-    return this.todoistSections.find(
-      section =>
-        section.name.trim() === name.trim() && section.projectId === project.id
-    ) ?? null;
+    return (
+      this.todoistSections.find(
+        section =>
+          section.name.trim() === name.trim() &&
+          section.projectId === project.id
+      ) ?? null
+    );
   }
 
   private getTodoistSectionTasks(section: Section): Task[] {
