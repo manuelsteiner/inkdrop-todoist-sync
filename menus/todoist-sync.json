@@ -1,0 +1,77 @@
+{
+  "context-menu": {
+    ".sidebar-menu-book-list-item": [
+      {
+        "type": "separator"
+      },
+      {
+        "label": "Export to Todoist",
+        "command": "todoist-sync:export-selected-books"
+      },
+      {
+        "label": "Import from Todoist",
+        "command": "todoist-sync:import-selected-projects"
+      },
+      {
+        "label": "Synchronise with Todoist",
+        "command": "todoist-sync:sync-selected"
+      },
+      {
+        "type": "separator"
+      }
+    ],
+    ".note-list-item-view": [
+      {
+        "label": "Export to Todoist",
+        "command": "todoist-sync:export-selected-notes"
+      }
+    ]
+  },
+  "menu": [
+    {
+      "label": "Plugins",
+      "submenu": [
+        {
+          "label": "Todoist Sync",
+          "submenu": [
+            {
+              "label": "Synchronise",
+              "command": "todoist-sync:sync-all"
+            },
+            {
+              "label": "Export to Todoist",
+              "command": "todoist-sync:export-all-books"
+            },
+            {
+              "label": "Import from Todoist",
+              "command": "todoist-sync:import-all-projects"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "File",
+      "submenu": [
+        {
+          "label": "Export",
+          "submenu": [
+            {
+              "label": "To Todoist",
+              "command": "todoist-sync:export-all-books"
+            }
+          ]
+        },
+        {
+          "label": "Import",
+          "submenu": [
+            {
+              "label": "From Todoist",
+              "command": "todoist-sync:import-all-projects"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "body": {
+    "ctrl-alt-t": "todoist-sync:sync-all"
+  }
+}

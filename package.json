@@ -1,0 +1,34 @@
+{
+  "name": "todoist-sync",
+  "main": "./lib/todoist-sync",
+  "version": "0.0.1",
+  "description": "Provides sync capabilities between inkdrop books/notes and Todoist projects/todos",
+  "keywords": [
+    "todoist",
+    "projects",
+    "todos"
+  ],
+  "repository": "https://github.com/manuelsteiner/inkdrop-todoist-sync",
+  "license": "MIT",
+  "engines": {
+    "inkdrop": "^5.3.1"
+  },
+  "dependencies": {
+    "@doist/todoist-api-typescript": "^1.5.0"
+  },
+  "devDependencies": {
+    "gts": "^3.1.0",
+    "inkdrop-model": "^2.7.1",
+    "typescript": "^4.7.2",
+    "@types/node": "^14.11.2"
+  },
+  "scripts": {
+    "lint": "gts lint",
+    "clean": "gts clean",
+    "compile": "tsc",
+    "fix": "gts fix",
+    "prepare": "npm run compile",
+    "pretest": "npm run compile",
+    "posttest": "npm run lint"
+  }
+}
