@@ -107,9 +107,9 @@ module.exports = {
     },
     exporttNotebooksAsSections: {
       title:
-        'Treat leaf notebooks as Todoist sections corresponding projects are absent',
+        'Treat leaf notebooks as Todoist sections if corresponding projects are absent',
       description:
-        'If this feature is enabled, leaf (deepested nested) notebooks will be exported as Todoist sections if not corresponding project is found. This means missing Todoist projects are created until the second to last level. The last level will then become a section in the project. If this feature is disabled, leaf notebooks will become projects and the tasks will not contain any sections. Be aware of implications on subsequent synchronisations!',
+        'If this feature is enabled, leaf (deepested nested) notebooks will be exported as Todoist sections if no corresponding project is found. This means missing Todoist projects are created until the second to last level. The last level will then become a section in the project. If this feature is disabled, leaf notebooks will become projects and the tasks will not contain any sections. Be aware of implications on subsequent synchronisations!',
       type: 'boolean',
       default: false,
     },
