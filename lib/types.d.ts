@@ -2,7 +2,6 @@ import { Note } from 'inkdrop-model';
 export interface Inkdrop {
     commands: any;
     config: any;
-    logger: any;
     main: any;
     notifications: any;
     store: any;

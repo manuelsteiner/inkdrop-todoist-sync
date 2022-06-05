@@ -7,6 +7,7 @@ import {
   TAG_COLOR_NAMES,
   TODOIST_COLOR_NAMES,
 } from './types';
+import {logger} from "inkdrop";
 
 declare let inkdrop: Inkdrop;
 
@@ -145,7 +146,7 @@ module.exports = {
             dismissable: true,
           });
         } catch (error) {
-          inkdrop.logger.error(
+          logger.error(
             'todoist-sync:sync-all: Synchronising all notebooks and projects failed. Details: ' +
               (<Error>error).message
           );
@@ -174,7 +175,7 @@ module.exports = {
             dismissable: true,
           });
         } catch (error) {
-          inkdrop.logger.error(
+          logger.error(
             'todoist-sync:sync-all: Synchronising selected notebooks and projects failed. Details: ' +
               (<Error>error).message
           );
@@ -203,7 +204,7 @@ module.exports = {
           dismissable: true,
         });
         //} catch (error) {
-        //  inkdrop.logger.error(
+        //  logger.error(
         //    'todoist-sync:import-all-projects: Importing all projects failed. Details: ' +
         //      (<Error>error).message
         //  );
@@ -232,7 +233,7 @@ module.exports = {
           dismissable: true,
         });
         //} catch (error) {
-        //  inkdrop.logger.error(
+        //  logger.error(
         //    'todoist-sync:import-selected-projects: Importing selected projects failed. Details: ' +
         //      (<Error>error).message
         //  );
@@ -261,7 +262,7 @@ module.exports = {
             dismissable: true,
           });
         } catch (error) {
-          inkdrop.logger.error(
+          logger.error(
             'todoist-sync:export-all-books: Exporting all notebooks failed. Details: ' +
               (<Error>error).message
           );
@@ -290,7 +291,7 @@ module.exports = {
           dismissable: true,
         });
         // } catch (error) {
-        //   inkdrop.logger.error(
+        //   logger.error(
         //     'todoist-sync:export-selected-books: Exporting selected notebooks failed. Details: ' +
         //       (<Error>error).message
         //   );
@@ -319,7 +320,7 @@ module.exports = {
             dismissable: true,
           });
         } catch (error) {
-          inkdrop.logger.error(
+          logger.error(
             'todoist-sync:export-selected-notes: Exporting selected notes failed. Details: ' +
               (<Error>error).message
           );

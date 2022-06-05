@@ -21,6 +21,7 @@ import {
   TodoistColorNames,
   TodoistColorSetting,
 } from './types';
+import {logger} from "inkdrop";
 
 import type {Note, Book, Tag, TagColor} from 'inkdrop-model';
 import {NOTE_STATUS, TAG_COLOR} from 'inkdrop-model';
@@ -82,7 +83,7 @@ export class TodoistSyncCore {
       }
       tags = await TodoistSyncCore.getTags();
     } catch (error) {
-      inkdrop.logger.error('Getting Inkdrop data failed. Details: ' + error);
+      logger.error('Getting Inkdrop data failed. Details: ' + error);
       throw new Error('Getting Inkdrop data failed.');
     }
 
@@ -92,7 +93,7 @@ export class TodoistSyncCore {
       todoistTasks = await TodoistSyncCore.getTodoistTasks(todoistApi);
       todoistLabels = await TodoistSyncCore.getTodoistLabels(todoistApi);
     } catch (error) {
-      inkdrop.logger.error('Getting Todoist data failed. Details: ' + error);
+      logger.error('Getting Todoist data failed. Details: ' + error);
       throw new Error('Getting Todoist data failed.');
     }
 
@@ -212,7 +213,7 @@ export class TodoistSyncCore {
       //  }
       //}
       //} catch(error) {
-      //  inkdrop.logger.error(
+      //  logger.error(
       //      'Importing single task failed. Details: ' + error
       //  );
       //  throw new Error('Importing single task failed.');
@@ -228,7 +229,7 @@ export class TodoistSyncCore {
     const project = this.getTodoistProjectById(task.projectId);
 
     if (!project) {
-      inkdrop.logger.error(
+      logger.error(
         'Todoist project ' +
           task.projectId +
           ' (from task ' +
@@ -308,7 +309,7 @@ export class TodoistSyncCore {
       //try {
       await this.importLabel(label);
       //} catch (error) {
-      //  inkdrop.logger.error('Importing single label failed. Details: ' + error);
+      //  logger.error('Importing single label failed. Details: ' + error);
       //  throw new Error('Importing single label failed.');
       //}
     }
@@ -332,7 +333,7 @@ export class TodoistSyncCore {
     try {
       await this.exportNotes(notes, projectName, true);
     } catch (error) {
-      inkdrop.logger.error('Exporting notes failed. Details: ' + error);
+      logger.error('Exporting notes failed. Details: ' + error);
       throw new Error('Exporting selected notes failed.');
     }
   }
@@ -348,7 +349,7 @@ export class TodoistSyncCore {
         ? await this.exportNoteToProjectWithName(note, projectName, forceExport)
         : await this.exportNote(note, undefined, forceExport);
       // } catch (error) {
-      //   inkdrop.logger.error('Exporting single note failed. Details: ' + error);
+      //   logger.error('Exporting single note failed. Details: ' + error);
       //   throw new Error('Exporting single note failed.');
       // }
     }
@@ -367,7 +368,7 @@ export class TodoistSyncCore {
     let project: Project | undefined = undefined;
 
     if (!book) {
-      inkdrop.logger.error(
+      logger.error(
         'Book ' + note.bookId + ' (from note ' + note._id + ') not found.'
       );
       throw new Error(
@@ -496,7 +497,7 @@ export class TodoistSyncCore {
       try {
         await this.exportTag(tag);
       } catch (error) {
-        inkdrop.logger.error('Exporting single tag failed. Details: ' + error);
+        logger.error('Exporting single tag failed. Details: ' + error);
         throw new Error('Exporting single tag failed.');
       }
     }
@@ -563,7 +564,7 @@ export class TodoistSyncCore {
           (await this.createBook(project.name, currentBook));
       }
     } catch (error) {
-      inkdrop.logger.error('Creating book hierarchy failed. Details: ' + error);
+      logger.error('Creating book hierarchy failed. Details: ' + error);
       throw new Error('Creating book hierarchy failed.');
     }
 
@@ -875,7 +876,7 @@ export class TodoistSyncCore {
           ));
       }
     } catch (error) {
-      inkdrop.logger.error(
+      logger.error(
         'Creating Todoist task hierarchy failed. Details: ' + error
       );
       throw new Error('Creating Todoist task hierarchy failed.');
@@ -1064,7 +1065,7 @@ export class TodoistSyncCore {
       );
 
       if (!currentTodoistProject) {
-        //inkdrop.logger.error('Error');
+        //logger.error('Error');
         //   'Getting Todoist project hierarchy for book hierarchy ' +
         //     bookHierarchy
         //       .map(book => {
@@ -1299,14 +1300,14 @@ export class TodoistSyncCore {
   private static handleTodoistError(error: TodoistRequestError) {
     switch (error.httpStatusCode) {
       case 401:
-        inkdrop.logger.error('todoist-sync: Todoist API access was denied.');
+        logger.error('todoist-sync: Todoist API access was denied.');
         inkdrop.notifications.addError('Todoist API access failed', {
           detail: 'Please check your Todoist API key in the plugin settings.',
           dismissable: true,
         });
         break;
       default:
-        inkdrop.logger.error('todoist-syc: Undefined API error.');
+        logger.error('todoist-syc: Undefined API error.');
         break;
     }
   }
