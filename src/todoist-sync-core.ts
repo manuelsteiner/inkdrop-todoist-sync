@@ -78,7 +78,7 @@ export class TodoistSyncCore {
     try {
       books = await TodoistSyncCore.getBooks();
       notes = await TodoistSyncCore.getNotes();
-      if (inkdrop.config.get('todoist-sync.syncCompleted')) {
+      if (inkdrop.config.get('todoist-sync.exportCompleted')) {
         notes = notes.concat(await TodoistSyncCore.getCompletedNotes());
       }
       tags = await TodoistSyncCore.getTags();
@@ -469,7 +469,7 @@ export class TodoistSyncCore {
         section
       );
 
-      if (note.status === 'completed') {
+      if (note.status === NOTE_STATUS.COMPLETED) {
         await this.completeTodoistTask(todoistTask);
       }
     }
@@ -744,7 +744,7 @@ export class TodoistSyncCore {
   private noteCanBeExported(note: Note): boolean {
     if (
       note.status === 'completed' &&
-      !inkdrop.config.get('todoist-sync.syncCompleted')
+      !inkdrop.config.get('todoist-sync.exportCompleted')
     ) {
       return false;
     }

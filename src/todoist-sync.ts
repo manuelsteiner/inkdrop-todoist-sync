@@ -85,10 +85,10 @@ module.exports = {
       default: 'default',
       enum: TAG_COLOR_NAMES,
     },
-    syncCompleted: {
-      title: 'Synchronise completed elements',
+    exportCompleted: {
+      title: 'Export completed notes',
       description:
-        'If this feature is enabled, completed notes and tasks are synchonised between Inkdrop and Todoist.',
+        'If this feature is enabled, completed notes are exported as completed Todoist tasks.',
       type: 'boolean',
       default: false,
     },
