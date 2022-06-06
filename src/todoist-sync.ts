@@ -17,7 +17,7 @@ module.exports = {
     apiKey: {
       title: 'Todoist API key',
       description:
-        'Your Todoist API key that allows todoist-sync to access your Todoist data. You can find it in Todoist under Settings -> Integrations -> API Tokens.',
+        'Your Todoist API key which allows todoist-sync to access your Todoist data. You can find it in Todoist under Settings -> Integrations -> API Tokens.',
       type: 'string',
       default: '',
     },
