@@ -9,6 +9,291 @@ import {
 import {logger} from 'inkdrop';
 import * as SidebarStatusItem from './sidebar-status-item';
 
+class TodoistSync {
+  private syncInProgress = false;
+
+  public activate() {
+    inkdrop.components.registerClass(SidebarStatusItem.default);
+
+    inkdrop.commands.add(document.body, {
+      'todoist-sync:sync-all': async () => {
+        if (this.syncInProgress) {
+          return;
+        }
+
+        try {
+          this.preCommand(
+            'Todoist synchronisation started',
+            'Synchronising all notebooks and projects.'
+          );
+
+          await (await TodoistSyncCore.construct()).syncAll();
+
+          this.handleSuccess(
+            'Todoist synchronisation finished',
+            'Synchronising all notebooks and projects finished.'
+          );
+        } catch (error) {
+          this.handleError(
+            error as Error,
+            'todoist-sync:sync-all: Synchronising all notebooks and projects failed.',
+            'Todoist synchronisation failed',
+            'Synchronising all notebooks and projects failed.'
+          );
+        } finally {
+          await this.postCommand();
+        }
+      },
+    });
+
+    inkdrop.commands.add(document.body, {
+      'todoist-sync:sync-selected': async () => {
+        if (this.syncInProgress) {
+          return;
+        }
+
+        try {
+          this.preCommand(
+            'Todoist synchronisation started',
+            'Synchronising selected notebooks and projects.'
+          );
+
+          await (await TodoistSyncCore.construct()).syncSelected();
+
+          this.handleSuccess(
+            'Todoist synchronisation finished',
+            'Synchronising selected notebooks and projects finished.'
+          );
+        } catch (error) {
+          this.handleError(
+            error as Error,
+            'todoist-sync:sync-all: Synchronising selected notebooks and projects failed.',
+            'Todoist synchronisation failed',
+            'Synchronising selected notebooks and projects failed.'
+          );
+        } finally {
+          await this.postCommand();
+        }
+      },
+    });
+
+    inkdrop.commands.add(document.body, {
+      'todoist-sync:import-all-projects': async () => {
+        if (this.syncInProgress) {
+          return;
+        }
+
+        try {
+          this.preCommand('Todoist import started', 'Importing all projects');
+
+          await (await TodoistSyncCore.construct()).importAllProjects();
+
+          this.handleSuccess(
+            'Todoist import finished',
+            'Importing all projects finished.'
+          );
+        } catch (error) {
+          this.handleError(
+            error as Error,
+            'todoist-sync:import-all-projects: Importing all projects failed.',
+            'Todoist import failed',
+            'Importing all projects failed.'
+          );
+        } finally {
+          await this.postCommand();
+        }
+      },
+    });
+
+    inkdrop.commands.add(document.body, {
+      'todoist-sync:import-selected-projects': async () => {
+        if (this.syncInProgress) {
+          return;
+        }
+
+        try {
+          this.preCommand(
+            'Todoist import started',
+            'Importing selected projects'
+          );
+
+          await (await TodoistSyncCore.construct()).importSelectedProjects();
+
+          this.handleSuccess(
+            'Todoist import finished',
+            'Importing selected projects finished.'
+          );
+        } catch (error) {
+          this.handleError(
+            error as Error,
+            'todoist-sync:import-selected-projects: Importing selected projects failed.',
+            'Todoist import failed',
+            'Importing selected projects failed.'
+          );
+        } finally {
+          await this.postCommand();
+        }
+      },
+    });
+
+    inkdrop.commands.add(document.body, {
+      'todoist-sync:export-all-books': async () => {
+        if (this.syncInProgress) {
+          return;
+        }
+
+        try {
+          this.preCommand('Todoist export started', 'Exporting all notebooks.');
+
+          await (await TodoistSyncCore.construct()).exportAllBooks();
+
+          this.handleSuccess(
+            'Todoist export finished',
+            'Exporting all notebooks finished.'
+          );
+        } catch (error) {
+          this.handleError(
+            error as Error,
+            'todoist-sync:export-all-books: Exporting all notebooks failed.',
+            'Todoist export failed',
+            'Exporting all notebooks failed.'
+          );
+        } finally {
+          await this.postCommand();
+        }
+      },
+    });
+
+    inkdrop.commands.add(document.body, {
+      'todoist-sync:export-selected-books': async () => {
+        if (this.syncInProgress) {
+          return;
+        }
+
+        try {
+          this.preCommand(
+            'Todoist export started',
+            'Exporting selected projects.'
+          );
+
+          await (await TodoistSyncCore.construct()).exportSelectedBooks();
+
+          this.handleSuccess(
+            'Todoist export finished',
+            'Exporting selected projects finished.'
+          );
+        } catch (error) {
+          this.handleError(
+            error as Error,
+            'todoist-sync:export-selected-books: Exporting selected notebooks failed.',
+            'Todoist export failed',
+            'Exporting selected notebooks failed.'
+          );
+        } finally {
+          await this.postCommand();
+        }
+      },
+    });
+
+    inkdrop.commands.add(document.body, {
+      'todoist-sync:export-selected-notes': async () => {
+        if (this.syncInProgress) {
+          return;
+        }
+
+        try {
+          this.preCommand(
+            'Todoist export started',
+            'Exporting selected notes.'
+          );
+
+          await (await TodoistSyncCore.construct()).exportSelectedNotes();
+
+          this.handleSuccess(
+            'Todoist export finished',
+            'Exporting selected notes finished.'
+          );
+        } catch (error) {
+          this.handleError(
+            error as Error,
+            'todoist-sync:export-selected-notes: Exporting selected notes failed.',
+            'Todoist export failed',
+            'Exporting selected notes failed.'
+          );
+        } finally {
+          await this.postCommand();
+        }
+      },
+    });
+  }
+
+  public deactivate() {
+    SidebarStatusItem.hide();
+    inkdrop.components.deleteClass(SidebarStatusItem.default);
+  }
+
+  private preCommand(notificationHeader?: string, notificationBody?: string) {
+    this.syncInProgress = true;
+
+    if (notificationHeader) {
+      inkdrop.notifications.addInfo(notificationHeader, {
+        detail: notificationBody ?? '',
+        dismissable: true,
+      });
+    }
+
+    if (inkdrop.config.get('todoist-sync.showSyncStatus')) {
+      SidebarStatusItem.show();
+    }
+  }
+
+  private handleError(
+    error: Error,
+    errorMessage: string,
+    notificationHeader?: string,
+    notificationBody?: string
+  ) {
+    logger.error(errorMessage + ' Details: ' + error.message);
+
+    if (notificationHeader) {
+      inkdrop.notifications.addError(notificationHeader, {
+        detail: notificationBody ?? '' + 'Details: ' + (<Error>error).message,
+        dismissable: true,
+      });
+    }
+
+    window.dispatchEvent(
+      new CustomEvent('todoist-sync-status', {detail: 'error'})
+    );
+  }
+
+  private handleSuccess(
+    notificationHeader?: string,
+    notificationBody?: string
+  ) {
+    if (notificationHeader) {
+      inkdrop.notifications.addSuccess(notificationHeader, {
+        detail: notificationBody ?? '',
+        dismissable: true,
+      });
+
+      window.dispatchEvent(
+        new CustomEvent('todoist-sync-status', {detail: 'success'})
+      );
+    }
+  }
+
+  private async postCommand() {
+    if (inkdrop.config.get('todoist-sync.showSyncStatus')) {
+      await SidebarStatusItem.hideDelayed();
+    }
+
+    this.syncInProgress = false;
+  }
+}
+
+const todoistSync = new TodoistSync();
+
 module.exports = {
   config: {
     apiKey: {
@@ -157,335 +442,10 @@ module.exports = {
   },
 
   activate() {
-    inkdrop.components.registerClass(SidebarStatusItem.default);
-
-    let syncInProgress = false;
-
-    inkdrop.commands.add(document.body, {
-      'todoist-sync:sync-all': async () => {
-        if (!syncInProgress) {
-          syncInProgress = true;
-
-          try {
-            inkdrop.notifications.addInfo('Todoist synchronisation started', {
-              detail: 'Synchronising all notebooks and projects.',
-              dismissable: true,
-            });
-            if (inkdrop.config.get('todoist-sync.showSyncStatus')) {
-              SidebarStatusItem.show();
-            }
-
-            await (await TodoistSyncCore.construct()).syncAll();
-
-            inkdrop.notifications.addSuccess(
-              'Todoist synchronisation finished',
-              {
-                detail: 'Synchronising all notebooks and projects finished.',
-                dismissable: true,
-              }
-            );
-            window.dispatchEvent(
-              new CustomEvent('todoist-sync-status', {detail: 'success'})
-            );
-          } catch (error) {
-            logger.error(
-              'todoist-sync:sync-all: Synchronising all notebooks and projects failed. Details: ' +
-                (<Error>error).message
-            );
-            inkdrop.notifications.addError('Todoist synchronisation failed', {
-              detail:
-                'Synchronising all notebooks and projects failed. Details: ' +
-                (<Error>error).message,
-              dismissable: true,
-            });
-            window.dispatchEvent(
-              new CustomEvent('todoist-sync-status', {detail: 'error'})
-            );
-          } finally {
-            await SidebarStatusItem.hideDelayed();
-            syncInProgress = false;
-          }
-        }
-      },
-    });
-
-    inkdrop.commands.add(document.body, {
-      'todoist-sync:sync-selected': async () => {
-        if (!syncInProgress) {
-          syncInProgress = true;
-
-          try {
-            inkdrop.notifications.addInfo('Todoist synchronisation started', {
-              detail: 'Synchronising selected notebooks and projects.',
-              dismissable: true,
-            });
-            if (inkdrop.config.get('todoist-sync.showSyncStatus')) {
-              SidebarStatusItem.show();
-            }
-
-            await (await TodoistSyncCore.construct()).syncSelected();
-
-            inkdrop.notifications.addSuccess(
-              'Todoist synchronisation finished',
-              {
-                detail:
-                  'Synchronising selected notebooks and projects finished.',
-                dismissable: true,
-              }
-            );
-            window.dispatchEvent(
-              new CustomEvent('todoist-sync-status', {detail: 'success'})
-            );
-          } catch (error) {
-            logger.error(
-              'todoist-sync:sync-all: Synchronising selected notebooks and projects failed. Details: ' +
-                (<Error>error).message
-            );
-            inkdrop.notifications.addError('Todoist synchronisation failed', {
-              detail:
-                'Synchronising selected notebooks and projects failed. Details: ' +
-                (<Error>error).message,
-              dismissable: true,
-            });
-            window.dispatchEvent(
-              new CustomEvent('todoist-sync-status', {detail: 'error'})
-            );
-          } finally {
-            await SidebarStatusItem.hideDelayed();
-            syncInProgress = false;
-          }
-        }
-      },
-    });
-
-    inkdrop.commands.add(document.body, {
-      'todoist-sync:import-all-projects': async () => {
-        if (!syncInProgress) {
-          syncInProgress = true;
-
-          try {
-            inkdrop.notifications.addInfo('Todoist import started', {
-              detail: 'Importing all projects.',
-              dismissable: true,
-            });
-            if (inkdrop.config.get('todoist-sync.showSyncStatus')) {
-              SidebarStatusItem.show();
-            }
-
-            await (await TodoistSyncCore.construct()).importAllProjects();
-
-            inkdrop.notifications.addSuccess('Todoist import finished', {
-              detail: 'Importing all projects finished.',
-              dismissable: true,
-            });
-            window.dispatchEvent(
-              new CustomEvent('todoist-sync-status', {detail: 'success'})
-            );
-          } catch (error) {
-            logger.error(
-              'todoist-sync:import-all-projects: Importing all projects failed. Details: ' +
-                (<Error>error).message
-            );
-            inkdrop.notifications.addError('Todoist import failed', {
-              detail:
-                'Importing all projects failed. Details: ' +
-                (<Error>error).message,
-              dismissable: true,
-            });
-            window.dispatchEvent(
-              new CustomEvent('todoist-sync-status', {detail: 'error'})
-            );
-          } finally {
-            await SidebarStatusItem.hideDelayed();
-            syncInProgress = false;
-          }
-        }
-      },
-    });
-
-    inkdrop.commands.add(document.body, {
-      'todoist-sync:import-selected-projects': async () => {
-        if (!syncInProgress) {
-          syncInProgress = true;
-
-          try {
-            inkdrop.notifications.addInfo('Todoist import started', {
-              detail: 'Importing selected projects.',
-              dismissable: true,
-            });
-            if (inkdrop.config.get('todoist-sync.showSyncStatus')) {
-              SidebarStatusItem.show();
-            }
-
-            await (await TodoistSyncCore.construct()).importSelectedProjects();
-
-            inkdrop.notifications.addSuccess('Todoist import finished', {
-              detail: 'Importing selected projects finished.',
-              dismissable: true,
-            });
-            window.dispatchEvent(
-              new CustomEvent('todoist-sync-status', {detail: 'success'})
-            );
-          } catch (error) {
-            logger.error(
-              'todoist-sync:import-selected-projects: Importing selected projects failed. Details: ' +
-                (<Error>error).message
-            );
-            inkdrop.notifications.addError('Todoist import failed', {
-              detail:
-                'Importing selected projects failed. Details: ' +
-                (<Error>error).message,
-              dismissable: true,
-            });
-            window.dispatchEvent(
-              new CustomEvent('todoist-sync-status', {detail: 'error'})
-            );
-          } finally {
-            await SidebarStatusItem.hideDelayed();
-            syncInProgress = false;
-          }
-        }
-      },
-    });
-
-    inkdrop.commands.add(document.body, {
-      'todoist-sync:export-all-books': async () => {
-        if (!syncInProgress) {
-          syncInProgress = true;
-
-          try {
-            inkdrop.notifications.addInfo('Todoist export started', {
-              detail: 'Exporting all notebooks.',
-              dismissable: true,
-            });
-            if (inkdrop.config.get('todoist-sync.showSyncStatus')) {
-              SidebarStatusItem.show();
-            }
-
-            await (await TodoistSyncCore.construct()).exportAllBooks();
-
-            inkdrop.notifications.addSuccess('Todoist export finished', {
-              detail: 'Exporting all notebooks finished.',
-              dismissable: true,
-            });
-            window.dispatchEvent(
-              new CustomEvent('todoist-sync-status', {detail: 'success'})
-            );
-          } catch (error) {
-            logger.error(
-              'todoist-sync:export-all-books: Exporting all notebooks failed. Details: ' +
-                (<Error>error).message
-            );
-            inkdrop.notifications.addError('Todoist export failed', {
-              detail:
-                'Exporting all notebooks failed. Details: ' +
-                (<Error>error).message,
-              dismissable: true,
-            });
-            window.dispatchEvent(
-              new CustomEvent('todoist-sync-status', {detail: 'error'})
-            );
-          } finally {
-            await SidebarStatusItem.hideDelayed();
-            syncInProgress = false;
-          }
-        }
-      },
-    });
-
-    inkdrop.commands.add(document.body, {
-      'todoist-sync:export-selected-books': async () => {
-        if (!syncInProgress) {
-          syncInProgress = true;
-
-          try {
-            inkdrop.notifications.addInfo('Todoist export started', {
-              detail: 'Exporting selected projects.',
-              dismissable: true,
-            });
-            if (inkdrop.config.get('todoist-sync.showSyncStatus')) {
-              SidebarStatusItem.show();
-            }
-
-            await (await TodoistSyncCore.construct()).exportSelectedBooks();
-
-            inkdrop.notifications.addSuccess('Todoist export finished', {
-              detail: 'Exporting selected projects finished.',
-              dismissable: true,
-            });
-            window.dispatchEvent(
-              new CustomEvent('todoist-sync-status', {detail: 'success'})
-            );
-          } catch (error) {
-            logger.error(
-              'todoist-sync:export-selected-books: Exporting selected notebooks failed. Details: ' +
-                (<Error>error).message
-            );
-            inkdrop.notifications.addError('Todoist export failed', {
-              detail:
-                'Exporting selected notebooks failed. Details: ' +
-                (<Error>error).message,
-              dismissable: true,
-            });
-            window.dispatchEvent(
-              new CustomEvent('todoist-sync-status', {detail: 'error'})
-            );
-          } finally {
-            await SidebarStatusItem.hideDelayed();
-            syncInProgress = false;
-          }
-        }
-      },
-    });
-
-    inkdrop.commands.add(document.body, {
-      'todoist-sync:export-selected-notes': async () => {
-        if (!syncInProgress) {
-          syncInProgress = true;
-
-          try {
-            inkdrop.notifications.addInfo('Todoist export started', {
-              detail: 'Exporting selected notes.',
-              dismissable: true,
-            });
-            if (inkdrop.config.get('todoist-sync.showSyncStatus')) {
-              SidebarStatusItem.show();
-            }
-
-            await (await TodoistSyncCore.construct()).exportSelectedNotes();
-
-            inkdrop.notifications.addSuccess('Todoist export finished', {
-              detail: 'Exporting selected notes finished.',
-              dismissable: true,
-            });
-            window.dispatchEvent(
-              new CustomEvent('todoist-sync-status', {detail: 'success'})
-            );
-          } catch (error) {
-            logger.error(
-              'todoist-sync:export-selected-notes: Exporting selected notes failed. Details: ' +
-                (<Error>error).message
-            );
-            inkdrop.notifications.addError('Todoist export failed', {
-              detail:
-                'Exporting selected notes failed. Details: ' +
-                (<Error>error).message,
-              dismissable: true,
-            });
-            window.dispatchEvent(
-              new CustomEvent('todoist-sync-status', {detail: 'error'})
-            );
-          } finally {
-            await SidebarStatusItem.hideDelayed();
-            syncInProgress = false;
-          }
-        }
-      },
-    });
+    todoistSync.activate();
   },
 
   deactivate() {
-    SidebarStatusItem.hide();
-    inkdrop.components.deleteClass(SidebarStatusItem.default);
+    todoistSync.deactivate();
   },
 };
