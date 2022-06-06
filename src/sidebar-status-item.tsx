@@ -51,9 +51,12 @@ export const componentName = SidebarStatusItem.name;
 const layoutName = 'sidebar';
 
 export function hide() {
-  setTimeout(() => {
-    inkdrop.layouts.removeComponentFromLayout(layoutName, componentName);
-  }, 10000);
+  inkdrop.layouts.removeComponentFromLayout(layoutName, componentName);
+}
+
+export async function hideDelayed() {
+  await new Promise(resolve => setTimeout(resolve, 10000));
+  inkdrop.layouts.removeComponentFromLayout(layoutName, componentName);
 }
 
 export function show() {
