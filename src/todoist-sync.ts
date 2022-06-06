@@ -129,6 +129,13 @@ module.exports = {
       type: 'boolean',
       default: true,
     },
+    showSyncStatus: {
+      title: 'Show synchronisation status in the sidebar',
+      description:
+        'If this feature is enabled, the sidebar will show a status item during an active synchronisation.',
+      type: 'boolean',
+      default: true,
+    },
   },
 
   activate() {
@@ -141,7 +148,9 @@ module.exports = {
             detail: 'Synchronising all notebooks and projects.',
             dismissable: true,
           });
-          SidebarStatusItem.show();
+          if (inkdrop.config.get('todoist-sync.showSyncStatus')) {
+            SidebarStatusItem.show();
+          }
 
           await (await TodoistSyncCore.construct()).syncAll();
 
@@ -179,7 +188,9 @@ module.exports = {
             detail: 'Synchronising selected notebooks and projects.',
             dismissable: true,
           });
-          SidebarStatusItem.show();
+          if (inkdrop.config.get('todoist-sync.showSyncStatus')) {
+            SidebarStatusItem.show();
+          }
 
           await (await TodoistSyncCore.construct()).syncSelected();
 
@@ -217,7 +228,9 @@ module.exports = {
             detail: 'Importing all projects.',
             dismissable: true,
           });
-          SidebarStatusItem.show();
+          if (inkdrop.config.get('todoist-sync.showSyncStatus')) {
+            SidebarStatusItem.show();
+          }
 
           await (await TodoistSyncCore.construct()).importAllProjects();
 
@@ -255,7 +268,9 @@ module.exports = {
             detail: 'Importing selected projects.',
             dismissable: true,
           });
-          SidebarStatusItem.show();
+          if (inkdrop.config.get('todoist-sync.showSyncStatus')) {
+            SidebarStatusItem.show();
+          }
 
           await (await TodoistSyncCore.construct()).importSelectedProjects();
 
@@ -293,7 +308,9 @@ module.exports = {
             detail: 'Exporting all notebooks.',
             dismissable: true,
           });
-          SidebarStatusItem.show();
+          if (inkdrop.config.get('todoist-sync.showSyncStatus')) {
+            SidebarStatusItem.show();
+          }
 
           await (await TodoistSyncCore.construct()).exportAllBooks();
 
@@ -331,7 +348,9 @@ module.exports = {
             detail: 'Exporting selected projects.',
             dismissable: true,
           });
-          SidebarStatusItem.show();
+          if (inkdrop.config.get('todoist-sync.showSyncStatus')) {
+            SidebarStatusItem.show();
+          }
 
           await (await TodoistSyncCore.construct()).exportSelectedBooks();
 
@@ -369,7 +388,9 @@ module.exports = {
             detail: 'Exporting selected notes.',
             dismissable: true,
           });
-          SidebarStatusItem.show();
+          if (inkdrop.config.get('todoist-sync.showSyncStatus')) {
+            SidebarStatusItem.show();
+          }
 
           await (await TodoistSyncCore.construct()).exportSelectedNotes();
 
