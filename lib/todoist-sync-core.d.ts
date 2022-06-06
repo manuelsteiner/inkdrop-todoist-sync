@@ -25,6 +25,8 @@ export declare class TodoistSyncCore {
     private importTask;
     private importLabels;
     private importLabel;
+    private importComments;
+    private importComment;
     exportSelectedNotes(): Promise<void>;
     private exportNotes;
     private exportNote;
@@ -50,6 +52,7 @@ export declare class TodoistSyncCore {
     private getBookNotes;
     private bookContainsNoteWithTitle;
     private getBookHierarchy;
+    private getTrimmedNoteTitle;
     private noteCanBeExported;
     private getNoteTags;
     private noteHasSomeTags;
@@ -68,6 +71,8 @@ export declare class TodoistSyncCore {
     private completeTodoistTask;
     private static getTodoistLabels;
     private createTodoistLabel;
+    private getTodoistCommentsForProject;
+    private getTodoistCommentsForTask;
     private todoistProjectExists;
     private getTodoistProjectById;
     private getTodoistProjectByName;
@@ -92,6 +97,7 @@ export declare class TodoistSyncCore {
     private todoistTaskHasSomeLabels;
     private getTodoistLabelsByNames;
     private getTodoistLabelsFromString;
+    private getTodoistTaskCommentString;
     private todoistProjectContainsSectionWithName;
     private todoistProjectContainsTaskWithContent;
     private todoistSectionContainsTaskWithContent;

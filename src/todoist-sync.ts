@@ -122,9 +122,23 @@ module.exports = {
     importTaskDescriptions: {
       title: 'Import Todoist task descriptions as note body',
       description:
-        'If this feature is enabled, the task description will be imported as note body when creating notes. Otherwise the note body will be emtpy.',
+        'If this feature is enabled, the task description of a Todoist task will be imported as note body when creating notes. Otherwise the note body will be emtpy.',
       type: 'boolean',
       default: true,
+    },
+    importProjectComments: {
+      title: 'Import Todoist project comments as notes',
+      description:
+        'If this feature is enabled, comments of Todoist projects will be imported as notes in the corresponding notebook. Otherwise the comments will be ignored.',
+      type: 'boolean',
+      default: false,
+    },
+    importTaskComments: {
+      title: 'Import Todoist task comments as note body',
+      description:
+        'If this feature is enabled, comments of Todoist tasks will be imported as note body in the corresponding note. Otherwise the comments will be ignored.',
+      type: 'boolean',
+      default: false,
     },
     showSyncStatus: {
       title: 'Show synchronisation status in the sidebar',

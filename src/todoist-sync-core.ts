@@ -5,6 +5,7 @@ import {
   AddProjectArgs,
   AddSectionArgs,
   AddTaskArgs,
+  Comment,
   Label,
   Project,
   Section,
@@ -180,6 +181,11 @@ export class TodoistSyncCore {
     if (inkdrop.config.get('todoist-sync.importSubTasks')) {
       await this.importTasks(this.getTodoistProjectSubTasks(project));
     }
+    if (inkdrop.config.get('todoist-sync.importProjectComments')) {
+      await this.importComments(
+        await this.getTodoistCommentsForProject(project)
+      );
+    }
     await this.importProjects(this.getTodoistSubProjects(project));
   }
 
@@ -218,7 +224,7 @@ export class TodoistSyncCore {
       //  logger.error(
       //      'Importing single task failed. Details: ' + error
       //  );
-      //  throw new Error('Importing single task failed.');
+      //  throw new Error('Importing single task fimportTaskailed.');
       //}
     }
   }
@@ -297,11 +303,20 @@ export class TodoistSyncCore {
           )
         : [];
 
-      const taskDescription = inkdrop.config.get(
+      let taskDescription = inkdrop.config.get(
         'todoist-sync.importTaskDescriptions'
       )
         ? task.description
         : '';
+
+      if (inkdrop.config.get('todoist-sync.importTaskComments')) {
+        const commentsString = await this.getTodoistTaskCommentString(task);
+        taskDescription = taskDescription ? taskDescription + '\n\n' : '';
+        taskDescription = commentsString
+          ? taskDescription + commentsString
+          : taskDescription;
+      }
+
       await this.createNote(task.content, book, taskDescription, tags);
     }
   }
@@ -323,6 +338,63 @@ export class TodoistSyncCore {
         label.name,
         inkdrop.config.get('todoist-sync.tagColor')
       );
+    }
+  }
+
+  private async importComments(comments: Comment[]) {
+    for (const comment of comments) {
+      try {
+        await this.importComment(comment);
+      } catch (error) {
+        logger.error('Importing single comment failed. Details: ' + error);
+        throw new Error('Importing single comment failed.');
+      }
+    }
+  }
+
+  private async importComment(comment: Comment) {
+    if (!comment.projectId) {
+      logger.error(
+        'Todoist comment ' + comment.id + ' is not attached to a project.'
+      );
+      throw new Error(
+        'Todoist comment ' + comment.id + ' is not attached to a project.'
+      );
+    }
+
+    const project = this.getTodoistProjectById(comment.projectId);
+
+    if (!project) {
+      logger.error(
+        'Todoist project ' +
+          comment.projectId +
+          ' (from comment ' +
+          comment.id +
+          ') not found.'
+      );
+      throw new Error(
+        'Todoist project ' +
+          comment.projectId +
+          ' (from comment ' +
+          comment.id +
+          ') not found.'
+      );
+    }
+
+    const book = await this.createBookHierarchyToRoot(project);
+
+    if (!book) {
+      throw new Error(
+        'Could not find book for Todoist project ' +
+          project.id +
+          ' to attach comment ' +
+          comment.id +
+          '.'
+      );
+    }
+
+    if (book && !this.bookContainsNoteWithTitle(book, comment.content)) {
+      await this.createNote(comment.content, book);
     }
   }
 
@@ -603,7 +675,7 @@ export class TodoistSyncCore {
 
     if (title.length > 128) {
       body = '...' + title.substring(125) + (body ? '\n\n' + body : '');
-      title = title.substring(0, 125) + '...';
+      title = this.getTrimmedNoteTitle(title) + '...';
     }
 
     const parameters: Note = {
@@ -723,9 +795,18 @@ export class TodoistSyncCore {
     return this.notes.filter(note => note.bookId === book._id);
   }
 
-  private bookContainsNoteWithTitle(book: Book, bookTitle: string): boolean {
+  private bookContainsNoteWithTitle(book: Book, noteTitle: string): boolean {
+    this.notes.forEach(note => {
+      console.log('trimmed note title');
+      console.log(this.getTrimmedNoteTitle(note.title));
+      console.log('trimmed wanted title');
+      console.log(this.getTrimmedNoteTitle(noteTitle));
+    });
+
     return this.notes.some(
-      note => note.title.trim() === bookTitle.trim() && note.bookId === book._id
+      note =>
+        this.getTrimmedNoteTitle(note.title) ===
+          this.getTrimmedNoteTitle(noteTitle) && note.bookId === book._id
     );
   }
 
@@ -741,6 +822,14 @@ export class TodoistSyncCore {
     }
 
     return bookHierarchy;
+  }
+
+  private getTrimmedNoteTitle(title: string): string {
+    let trimmed = title.trim();
+    trimmed = trimmed.endsWith('...')
+      ? trimmed.substring(0, trimmed.length - 3)
+      : trimmed;
+    return trimmed.length > 128 ? trimmed.substring(0, 125) : trimmed;
   }
 
   private noteCanBeExported(note: Note): boolean {
@@ -990,7 +1079,7 @@ export class TodoistSyncCore {
         return labels;
       })
       .catch(error => {
-        this.handleTodoistError(error);
+        TodoistSyncCore.handleTodoistError(error);
         throw error;
       });
   }
@@ -1005,6 +1094,30 @@ export class TodoistSyncCore {
       .then(label => {
         this.todoistLabels.push(label);
         return label;
+      })
+      .catch(error => {
+        TodoistSyncCore.handleTodoistError(error);
+        throw error;
+      });
+  }
+
+  private getTodoistCommentsForProject(project: Project): Promise<Comment[]> {
+    return this.todoistApi
+      .getComments({projectId: project.id})
+      .then(comments => {
+        return comments;
+      })
+      .catch(error => {
+        TodoistSyncCore.handleTodoistError(error);
+        throw error;
+      });
+  }
+
+  private getTodoistCommentsForTask(task: Task): Promise<Comment[]> {
+    return this.todoistApi
+      .getComments({taskId: task.id})
+      .then(comments => {
+        return comments;
       })
       .catch(error => {
         TodoistSyncCore.handleTodoistError(error);
@@ -1232,6 +1345,26 @@ export class TodoistSyncCore {
         return tagName.trim().replace(/^"|"$/g, '');
       })
     );
+  }
+
+  private async getTodoistTaskCommentString(task: Task): Promise<string> {
+    const comments = await this.getTodoistCommentsForTask(task);
+
+    if (!comments.length) {
+      return '';
+    }
+
+    let commentsString = '# Todoist Comments';
+
+    comments.forEach(comment => {
+      commentsString += '\n';
+      commentsString +=
+        '## ' + new Date(Date.parse(comment.posted)).toLocaleString();
+      commentsString += '\n';
+      commentsString += comment.content;
+    });
+
+    return commentsString;
   }
 
   private todoistProjectContainsSectionWithName(
