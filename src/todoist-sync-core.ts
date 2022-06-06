@@ -16,12 +16,13 @@ import {
   DbGetNotesResult,
   DbPutResult,
   Inkdrop,
+  SyncDirection,
   SYNC_DIRECTION,
   TodoistColor,
   TodoistColorNames,
   TodoistColorSetting,
 } from './types';
-import {logger} from "inkdrop";
+import {logger} from 'inkdrop';
 
 import type {Note, Book, Tag, TagColor} from 'inkdrop-model';
 import {NOTE_STATUS, TAG_COLOR} from 'inkdrop-model';
@@ -110,36 +111,40 @@ export class TodoistSyncCore {
   }
 
   public async syncAll() {
-    const syncDirection = inkdrop.config.get('todoist-sync.syncDirection');
+    const syncDirection: SyncDirection = inkdrop.config.get(
+      'todoist-sync.syncDirection'
+    );
 
     if (
       syncDirection === SYNC_DIRECTION.EXPORT ||
-      syncDirection === SYNC_DIRECTION.EXPORT
+      syncDirection === SYNC_DIRECTION.BOTH
     ) {
       await this.exportAllBooks();
     }
 
     if (
       syncDirection === SYNC_DIRECTION.IMPORT ||
-      syncDirection === SYNC_DIRECTION.EXPORT
+      syncDirection === SYNC_DIRECTION.BOTH
     ) {
       await this.importAllProjects();
     }
   }
 
   public async syncSelected() {
-    const syncDirection = inkdrop.config.get('todoist-sync.syncDirection');
+    const syncDirection: SyncDirection = inkdrop.config.get(
+      'todoist-sync.syncDirection'
+    );
 
     if (
       syncDirection === SYNC_DIRECTION.EXPORT ||
-      syncDirection === SYNC_DIRECTION.EXPORT
+      syncDirection === SYNC_DIRECTION.BOTH
     ) {
       await this.exportSelectedBooks();
     }
 
     if (
       syncDirection === SYNC_DIRECTION.IMPORT ||
-      syncDirection === SYNC_DIRECTION.EXPORT
+      syncDirection === SYNC_DIRECTION.BOTH
     ) {
       await this.importSelectedProjects();
     }
@@ -876,9 +881,7 @@ export class TodoistSyncCore {
           ));
       }
     } catch (error) {
-      logger.error(
-        'Creating Todoist task hierarchy failed. Details: ' + error
-      );
+      logger.error('Creating Todoist task hierarchy failed. Details: ' + error);
       throw new Error('Creating Todoist task hierarchy failed.');
     }
 

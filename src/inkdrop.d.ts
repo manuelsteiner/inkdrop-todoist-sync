@@ -1,1 +1,1 @@
-declare module "inkdrop";
+declare module 'inkdrop';

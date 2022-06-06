@@ -1,0 +1,35 @@
+.sidebar-menu-todoist-sync {
+  color: var(--sidebar-menu-item-color);
+}
+
+.sidebar-menu-todoist-sync.sync-active {
+  color: var(--sidebar-menu-item-color);
+}
+
+.sidebar-menu-todoist-sync.sync-error {
+  color: var(--red);
+}
+
+.sidebar-menu-todoist-sync.sync-success {
+  color: var(--green);
+}
+
+.sidebar-menu-todoist-sync > .streamline-icon {
+  align-self: center;
+  font-size: 16px;
+  margin: 1px;
+}
+
+.sidebar-menu-todoist-sync > .streamline-icon.animate-spin {
+  animation: spin 2s linear infinite;
+  animation-fill-mode: forwards;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
