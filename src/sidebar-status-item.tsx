@@ -8,7 +8,7 @@ declare let inkdrop: Inkdrop;
 const SidebarStatusItem = () => {
   const {SideBarMenuItem} = inkdrop.components.classes;
 
-  const [syncStatus, setSyncStatus] = useState<SyncStatus>('active');
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>(SYNC_STATUS.ACTIVE as SyncStatus);
 
   useEffect(() => {
     const handler = (event: CustomEvent<SyncStatus>) => {
