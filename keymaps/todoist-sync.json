@@ -1,5 +1,11 @@
 {
-  "body": {
+  ".platform-darwin": {
+    "cmd-alt-t": "todoist-sync:sync-all"
+  },
+  ".platform-linux": {
+    "ctrl-alt-t": "todoist-sync:sync-all"
+  },
+  ".platform-win32": {
     "ctrl-alt-t": "todoist-sync:sync-all"
   }
 }
