@@ -15,7 +15,6 @@ import {
 import {
   DbGetNotesResult,
   DbPutResult,
-  Inkdrop,
   SyncDirection,
   SYNC_DIRECTION,
   TodoistColor,
@@ -26,8 +25,6 @@ import {logger} from 'inkdrop';
 
 import type {Note, Book, Tag, TagColor} from 'inkdrop-model';
 import {NOTE_STATUS, TAG_COLOR} from 'inkdrop-model';
-
-declare let inkdrop: Inkdrop;
 
 export class TodoistSyncCore {
   private books: Book[];

@@ -1,16 +1,5 @@
 import {Note} from 'inkdrop-model';
 
-/* eslint-disable  @typescript-eslint/no-explicit-any */
-export interface Inkdrop {
-  commands: any;
-  config: any;
-  components: any;
-  layouts: any;
-  main: any;
-  notifications: any;
-  store: any;
-}
-
 export declare type DbGetNotesResult = {
   docs: Note[];
 };

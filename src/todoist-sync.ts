@@ -2,15 +2,12 @@
 
 import {TodoistSyncCore} from './todoist-sync-core';
 import {
-  Inkdrop,
   SYNC_DIRECTION_VALUES,
   TAG_COLOR_NAMES,
   TODOIST_COLOR_NAMES,
 } from './types';
 import {logger} from 'inkdrop';
 import * as SidebarStatusItem from './sidebar-status-item';
-
-declare let inkdrop: Inkdrop;
 
 module.exports = {
   config: {

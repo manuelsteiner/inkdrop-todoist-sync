@@ -1,9 +1,7 @@
 'use babel';
 
 import React, {useEffect, useState} from 'react';
-import {Inkdrop, SYNC_STATUS, SyncStatus} from './types';
-
-declare let inkdrop: Inkdrop;
+import {SYNC_STATUS, SyncStatus} from './types';
 
 const SidebarStatusItem = () => {
   const {SideBarMenuItem} = inkdrop.components.classes;

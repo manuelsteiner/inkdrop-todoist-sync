@@ -1,13 +1,4 @@
 import { Note } from 'inkdrop-model';
-export interface Inkdrop {
-    commands: any;
-    config: any;
-    components: any;
-    layouts: any;
-    main: any;
-    notifications: any;
-    store: any;
-}
 export declare type DbGetNotesResult = {
     docs: Note[];
 };
