@@ -22,19 +22,19 @@ export declare type DbPutResult = {
 };
 
 export declare type SyncStatus = 'active' | 'error' | 'success';
-export const SYNC_STATUS = {
-  ACTIVE: 'active',
-  ERROR: 'error',
-  SUCCESS: 'success',
-};
+export const enum SYNC_STATUS {
+  ACTIVE = 'active',
+  ERROR = 'error',
+  SUCCESS = 'success',
+}
 
 export const SYNC_DIRECTION_VALUES = ['both', 'import', 'export'] as const;
 export declare type SyncDirection = typeof SYNC_DIRECTION_VALUES[number];
-export const SYNC_DIRECTION = {
-  BOTH: 'both',
-  IMPORT: 'import',
-  EXPORT: 'export',
-};
+export const enum SYNC_DIRECTION {
+  BOTH = 'both',
+  IMPORT = 'import',
+  EXPORT = 'export',
+}
 
 export const TAG_COLOR_NAMES = [
   'default',
@@ -76,30 +76,30 @@ export const TODOIST_COLOR_NAMES = [
   'taupe',
 ] as const;
 export declare type TodoistColorSetting = typeof TODOIST_COLOR_NAMES[number];
-export const TODOIST_COLOR_SETTING = {
-  BERRY_RED: 'berry red',
-  RED: 'red',
-  ORANGE: 'orange',
-  YELLOW: 'yellow',
-  OLIVE_GREEN: 'olive green',
-  LIME_GREEN: 'lime green',
-  GREEN: 'green',
-  MINT_GREEN: 'mint green',
-  TEAL: 'teal',
-  SKY_BLUE: 'sky blue',
-  LIGHT_BLUE: 'light blue',
-  BLUE: 'blue',
-  GRAPE: 'grape',
-  VIOLET: 'violet',
-  LAVENDER: 'lavender',
-  MAGENTA: 'magenta',
-  SALMON: 'salmon',
-  CHARCOAL: 'charcoal',
-  GREY: 'grey',
-  TAUPE: 'taupe',
-};
+export const enum TODOIST_COLOR_SETTING {
+  BERRY_RED = 'berry red',
+  RED = 'red',
+  ORANGE = 'orange',
+  YELLOW = 'yellow',
+  OLIVE_GREEN = 'olive green',
+  LIME_GREEN = 'lime green',
+  GREEN = 'green',
+  MINT_GREEN = 'mint green',
+  TEAL = 'teal',
+  SKY_BLUE = 'sky blue',
+  LIGHT_BLUE = 'light blue',
+  BLUE = 'blue',
+  GRAPE = 'grape',
+  VIOLET = 'violet',
+  LAVENDER = 'lavender',
+  MAGENTA = 'magenta',
+  SALMON = 'salmon',
+  CHARCOAL = 'charcoal',
+  GREY = 'grey',
+  TAUPE = 'taupe',
+}
 
-export const enum TodoistColor {
+export enum TodoistColor {
   BERRY_RED = 30,
   RED = 31,
   ORANGE = 32,
