@@ -10,11 +10,12 @@ export declare type DbPutResult = {
   rev: string;
 };
 
-export declare type SyncStatus = 'active' | 'error' | 'success';
+export declare type SyncStatus = 'active' | 'error' | 'success' | 'warning';
 export const enum SYNC_STATUS {
   ACTIVE = 'active',
   ERROR = 'error',
   SUCCESS = 'success',
+  WARNING = 'warning',
 }
 
 export const SYNC_DIRECTION_VALUES = ['both', 'import', 'export'] as const;

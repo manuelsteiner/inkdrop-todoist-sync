@@ -2,6 +2,7 @@
 
 import React, {useEffect, useState} from 'react';
 import {SYNC_STATUS, SyncStatus} from './types';
+import {sleep} from './utils';
 
 const SidebarStatusItem = () => {
   const {SideBarMenuItem} = inkdrop.components.classes;
@@ -55,7 +56,7 @@ export function hide() {
 }
 
 export async function hideDelayed() {
-  await new Promise(resolve => setTimeout(resolve, 10000));
+  await sleep(10000);
   inkdrop.layouts.removeComponentFromLayout(layoutName, componentName);
 }
 

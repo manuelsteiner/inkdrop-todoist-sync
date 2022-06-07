@@ -3,21 +3,24 @@
 import {TodoistSyncCore} from './todoist-sync-core';
 import {
   SYNC_DIRECTION_VALUES,
+  SYNC_STATUS,
   TAG_COLOR_NAMES,
   TODOIST_COLOR_NAMES,
 } from './types';
 import {logger} from 'inkdrop';
 import * as SidebarStatusItem from './sidebar-status-item';
+import {sleep} from './utils';
 
 class TodoistSync {
   private syncInProgress = false;
+  private syncInterval = 0;
 
   public activate() {
     inkdrop.components.registerClass(SidebarStatusItem.default);
 
     inkdrop.commands.add(document.body, {
       'todoist-sync:sync-all': async () => {
-        if (this.syncInProgress) {
+        if (!this.canRun()) {
           return;
         }
 
@@ -48,7 +51,7 @@ class TodoistSync {
 
     inkdrop.commands.add(document.body, {
       'todoist-sync:sync-selected': async () => {
-        if (this.syncInProgress) {
+        if (!this.canRun()) {
           return;
         }
 
@@ -79,7 +82,7 @@ class TodoistSync {
 
     inkdrop.commands.add(document.body, {
       'todoist-sync:import-all-projects': async () => {
-        if (this.syncInProgress) {
+        if (!this.canRun()) {
           return;
         }
 
@@ -107,7 +110,7 @@ class TodoistSync {
 
     inkdrop.commands.add(document.body, {
       'todoist-sync:import-selected-projects': async () => {
-        if (this.syncInProgress) {
+        if (!this.canRun()) {
           return;
         }
 
@@ -138,7 +141,7 @@ class TodoistSync {
 
     inkdrop.commands.add(document.body, {
       'todoist-sync:export-all-books': async () => {
-        if (this.syncInProgress) {
+        if (!this.canRun()) {
           return;
         }
 
@@ -166,7 +169,7 @@ class TodoistSync {
 
     inkdrop.commands.add(document.body, {
       'todoist-sync:export-selected-books': async () => {
-        if (this.syncInProgress) {
+        if (!this.canRun()) {
           return;
         }
 
@@ -197,7 +200,7 @@ class TodoistSync {
 
     inkdrop.commands.add(document.body, {
       'todoist-sync:export-selected-notes': async () => {
-        if (this.syncInProgress) {
+        if (!this.canRun()) {
           return;
         }
 
@@ -225,11 +228,39 @@ class TodoistSync {
         }
       },
     });
+
+    this.setupConfigEventHandlers();
+    this.setupAutomaticSync();
   }
 
   public deactivate() {
+    this.syncInterval = 0;
     SidebarStatusItem.hide();
     inkdrop.components.deleteClass(SidebarStatusItem.default);
+  }
+
+  private canRun(): boolean {
+    if (this.syncInProgress) {
+      inkdrop.notifications.addWarning('Todoist synchronisation in progress', {
+        detail:
+          'A Todoist synchronisation is currently in progress. Please wait for it to finish.',
+        dismissable: true,
+      });
+
+      return false;
+    }
+
+    if (inkdrop.store.getState().db.isSyncing) {
+      inkdrop.notifications.addWarning('Inkdrop synchronisation in progress', {
+        detail:
+          'An Inkdrop synchronisation is currently in progress. Please wait for it to finish.',
+        dismissable: true,
+      });
+
+      return false;
+    }
+
+    return true;
   }
 
   private preCommand(notificationHeader?: string, notificationBody?: string) {
@@ -263,7 +294,7 @@ class TodoistSync {
     }
 
     window.dispatchEvent(
-      new CustomEvent('todoist-sync-status', {detail: 'error'})
+      new CustomEvent('todoist-sync-status', {detail: SYNC_STATUS.ERROR})
     );
   }
 
@@ -278,7 +309,7 @@ class TodoistSync {
       });
 
       window.dispatchEvent(
-        new CustomEvent('todoist-sync-status', {detail: 'success'})
+        new CustomEvent('todoist-sync-status', {detail: SYNC_STATUS.SUCCESS})
       );
     }
   }
@@ -289,6 +320,39 @@ class TodoistSync {
     }
 
     this.syncInProgress = false;
+  }
+
+  private setupAutomaticSync() {
+    const syncInterval = inkdrop.config.get('todoist-sync.syncInterval');
+
+    if (syncInterval && syncInterval > 0) {
+      this.syncInterval = syncInterval;
+      this.automaticSync();
+    }
+  }
+
+  private setupConfigEventHandlers() {
+    /* eslint-disable  @typescript-eslint/no-unused-vars */
+    inkdrop.config.onDidChange(
+      'todoist-sync.syncInterval',
+      ({newValue, oldValue}: {newValue: number; oldValue: number}) => {
+        if (newValue && newValue > 0) {
+          this.syncInterval = newValue;
+          this.automaticSync();
+        } else {
+          this.syncInterval = 0;
+        }
+      }
+    );
+  }
+
+  private async automaticSync(): Promise<void> {
+    while (this.syncInterval > 0) {
+      if (this.syncInterval > 0) {
+        await inkdrop.commands.dispatch(document.body, 'todoist-sync:sync-all');
+      }
+      await sleep(60 * 1000 * this.syncInterval);
+    }
   }
 }
 
@@ -311,13 +375,13 @@ module.exports = {
       default: 'both',
       enum: SYNC_DIRECTION_VALUES,
     },
-    // syncInterval: {
-    //   title: 'Automatic synchronisation (in minutes)',
-    //   description:
-    //     'If set to greater 0, synchronisations will automatically run automatically and repeatedly after the specified interval. Otherwise if set to 0, automatic synchronisation will be disabled.',
-    //   type: 'integer',
-    //   default: 0,
-    // },
+    syncInterval: {
+      title: 'Automatic synchronisation (in minutes)',
+      description:
+        'If set to greater 0, synchronisations will automatically run automatically and repeatedly after the specified interval. Otherwise if set to 0, automatic synchronisation will be disabled.',
+      type: 'integer',
+      default: 0,
+    },
     projectColor: {
       title: 'Todoist project colour',
       description: 'Todoist projects will be created with the selected colour.',

@@ -7,11 +7,12 @@ export declare type DbPutResult = {
     id: string;
     rev: string;
 };
-export declare type SyncStatus = 'active' | 'error' | 'success';
+export declare type SyncStatus = 'active' | 'error' | 'success' | 'warning';
 export declare const enum SYNC_STATUS {
     ACTIVE = "active",
     ERROR = "error",
-    SUCCESS = "success"
+    SUCCESS = "success",
+    WARNING = "warning"
 }
 export declare const SYNC_DIRECTION_VALUES: readonly ["both", "import", "export"];
 export declare type SyncDirection = typeof SYNC_DIRECTION_VALUES[number];
