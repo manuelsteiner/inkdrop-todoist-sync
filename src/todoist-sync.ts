@@ -10,6 +10,8 @@ import {
 import {logger} from 'inkdrop';
 import * as SidebarStatusItem from './sidebar-status-item';
 import {sleep} from './utils';
+import path from 'path';
+import {ASSETFOLDER, ICONFILE} from './assets';
 
 class TodoistSync {
   private syncInProgress = false;
@@ -20,32 +22,7 @@ class TodoistSync {
 
     inkdrop.commands.add(document.body, {
       'todoist-sync:sync-all': async () => {
-        if (!this.canRun()) {
-          return;
-        }
-
-        try {
-          this.preCommand(
-            'Todoist synchronisation started',
-            'Synchronising all notebooks and projects.'
-          );
-
-          await (await TodoistSyncCore.construct()).syncAll();
-
-          this.handleSuccess(
-            'Todoist synchronisation finished',
-            'Synchronising all notebooks and projects finished.'
-          );
-        } catch (error) {
-          this.handleError(
-            error as Error,
-            'todoist-sync:sync-all: Synchronising all notebooks and projects failed.',
-            'Todoist synchronisation failed',
-            'Synchronising all notebooks and projects failed.'
-          );
-        } finally {
-          await this.postCommand();
-        }
+        await this.syncAll(false);
       },
     });
 
@@ -263,13 +240,25 @@ class TodoistSync {
     return true;
   }
 
-  private preCommand(notificationHeader?: string, notificationBody?: string) {
+  private preCommand(
+    notificationHeader?: string,
+    notificationBody?: string,
+    showNativeNotification?: boolean
+  ) {
     this.syncInProgress = true;
 
     if (notificationHeader) {
       inkdrop.notifications.addInfo(notificationHeader, {
         detail: notificationBody ?? '',
         dismissable: true,
+      });
+    }
+
+    if (notificationHeader && showNativeNotification) {
+      new Notification(notificationHeader, {
+        icon: path.resolve(__dirname, '..', ASSETFOLDER, ICONFILE),
+        body: notificationBody,
+        requireInteraction: false,
       });
     }
 
@@ -282,7 +271,8 @@ class TodoistSync {
     error: Error,
     errorMessage: string,
     notificationHeader?: string,
-    notificationBody?: string
+    notificationBody?: string,
+    showNativeNotification?: boolean
   ) {
     logger.error(errorMessage + ' Details: ' + error.message);
 
@@ -293,6 +283,14 @@ class TodoistSync {
       });
     }
 
+    if (notificationHeader && showNativeNotification) {
+      new Notification(notificationHeader, {
+        icon: path.resolve(__dirname, '..', ASSETFOLDER, ICONFILE),
+        body: notificationBody,
+        requireInteraction: false,
+      });
+    }
+
     window.dispatchEvent(
       new CustomEvent('todoist-sync-status', {detail: SYNC_STATUS.ERROR})
     );
@@ -300,18 +298,27 @@ class TodoistSync {
 
   private handleSuccess(
     notificationHeader?: string,
-    notificationBody?: string
+    notificationBody?: string,
+    showNativeNotification?: boolean
   ) {
     if (notificationHeader) {
       inkdrop.notifications.addSuccess(notificationHeader, {
         detail: notificationBody ?? '',
         dismissable: true,
       });
-
-      window.dispatchEvent(
-        new CustomEvent('todoist-sync-status', {detail: SYNC_STATUS.SUCCESS})
-      );
     }
+
+    if (notificationHeader && showNativeNotification) {
+      new Notification(notificationHeader, {
+        icon: path.resolve(__dirname, '..', ASSETFOLDER, ICONFILE),
+        body: notificationBody,
+        requireInteraction: false,
+      });
+    }
+
+    window.dispatchEvent(
+      new CustomEvent('todoist-sync-status', {detail: SYNC_STATUS.SUCCESS})
+    );
   }
 
   private async postCommand() {
@@ -338,7 +345,9 @@ class TodoistSync {
       ({newValue, oldValue}: {newValue: number; oldValue: number}) => {
         if (newValue && newValue > 0) {
           this.syncInterval = newValue;
-          this.automaticSync();
+          if (oldValue === 0) {
+            this.automaticSync();
+          }
         } else {
           this.syncInterval = 0;
         }
@@ -349,9 +358,43 @@ class TodoistSync {
   private async automaticSync(): Promise<void> {
     while (this.syncInterval > 0) {
       if (this.syncInterval > 0) {
-        await inkdrop.commands.dispatch(document.body, 'todoist-sync:sync-all');
+        await this.syncAll(
+          inkdrop.config.get('todoist-sync.showNativeNotifications')
+        );
       }
       await sleep(60 * 1000 * this.syncInterval);
+    }
+  }
+
+  private async syncAll(showNativeNotifications?: boolean) {
+    if (!this.canRun()) {
+      return;
+    }
+
+    try {
+      this.preCommand(
+        'Todoist synchronisation started',
+        'Synchronising all notebooks and projects.',
+        showNativeNotifications
+      );
+
+      await (await TodoistSyncCore.construct()).syncAll();
+
+      this.handleSuccess(
+        'Todoist synchronisation finished',
+        'Synchronising all notebooks and projects finished.',
+        showNativeNotifications
+      );
+    } catch (error) {
+      this.handleError(
+        error as Error,
+        'todoist-sync:sync-all: Synchronising all notebooks and projects failed.',
+        'Todoist synchronisation failed',
+        'Synchronising all notebooks and projects failed.',
+        showNativeNotifications
+      );
+    } finally {
+      await this.postCommand();
     }
   }
 }
@@ -502,6 +545,14 @@ module.exports = {
         'If this feature is enabled, the sidebar will show a status item during an active synchronisation.',
       type: 'boolean',
       default: true,
+    },
+    showNativeNotifications: {
+      title:
+        'Show platform-specific native notifications for automatic synchronisation',
+      description:
+        'If this feature is enabled, platform-secific native notifications will be shown in addition to Inkdrop notifications for automatic synchronisations. This is useful for getting informed about synchronisations when Inkdrop running in the background. If disabled, only notifications inside of Inkdrop will be shown.',
+      type: 'boolean',
+      default: false,
     },
   },
 
