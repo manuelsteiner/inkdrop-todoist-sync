@@ -565,6 +565,9 @@ export class TodoistSyncCore {
 
       const todoistTask = await this.createTodoistTask(
         note.title,
+        inkdrop.config.get('todoist-sync.exportNoteBodies')
+          ? note.body
+          : undefined,
         labels,
         project,
         section
@@ -1083,6 +1086,7 @@ export class TodoistSyncCore {
 
   private createTodoistTask(
     content: string,
+    description?: string,
     labels?: Label[],
     project?: Project,
     section?: Section,
@@ -1091,6 +1095,10 @@ export class TodoistSyncCore {
     const parameters: AddTaskArgs = {
       content: content.trim(),
     };
+
+    if (description) {
+      parameters.description = description;
+    }
 
     if (labels) {
       parameters.labelIds = labels.map(label => {

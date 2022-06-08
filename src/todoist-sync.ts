@@ -553,6 +553,13 @@ module.exports = {
       type: 'boolean',
       default: true,
     },
+    exportNoteBodies: {
+      title: 'Export note bodies as Todoist task descriptions',
+      description:
+        'If this feature is enabled, note bodies will be exported to Todoist task descriptions. Otherwise the note bodies will note be exported. Be aware that Todoist only supports a small sub-set of Markdown formatting options.',
+      type: 'boolean',
+      default: false,
+    },
     importProjectComments: {
       title: 'Import Todoist project comments as notes',
       description:
