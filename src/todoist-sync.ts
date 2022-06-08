@@ -433,7 +433,7 @@ module.exports = {
       enum: TODOIST_COLOR_NAMES,
     },
     singleNoteExportProject: {
-      title: 'Project for selected note exports',
+      title: 'Todoist project for selected note exports',
       description:
         'If set, selected notes that are exported from the notes list will be stored in this specific project. The project will be created if it does not exist. If the setting is left blank, the notes are exported like with any other export. Depending on the settings, a project, section and todo hierarchy will be created to reflect notebooks in which the notes are contained.',
       type: 'string',
@@ -482,10 +482,38 @@ module.exports = {
       default: 'default',
       enum: TAG_COLOR_NAMES,
     },
+    labelColor: {
+      title: 'Todoist label colour',
+      description: 'Todoist labels will be created with the selected colour.',
+      type: 'string',
+      default: 'charcoal',
+      enum: TODOIST_COLOR_NAMES,
+    },
+    activeLabel: {
+      title: 'Todoist label for notes with status active',
+      description:
+        'If set, notes with status active will be exported with an additional label. This setting is independent from the setting that controls label synchronisation.',
+      type: 'string',
+      default: '',
+    },
+    onHoldLabel: {
+      title: 'Todoist label for notes with status on hold',
+      description:
+        'If set, notes with status on hold will be exported with an additional label. This setting is independent from the setting that controls label synchronisation',
+      type: 'string',
+      default: '',
+    },
     exportCompleted: {
       title: 'Export completed notes',
       description:
         'If this feature is enabled, completed notes are exported as completed Todoist tasks.',
+      type: 'boolean',
+      default: false,
+    },
+    exportDropped: {
+      title: 'Export dropped notes',
+      description:
+        'If this feature is enabled, dropped notes are exported as completed Todoist tasks.',
       type: 'boolean',
       default: false,
     },
@@ -497,7 +525,7 @@ module.exports = {
       default: false,
     },
     exportExistingSubTasks: {
-      title: 'Export notes when a sub task exists',
+      title: 'Export notes when a Todoist sub task exists',
       description:
         'If this feature is enabled, notes will be exported to the project even if a sub task of an other task in the same project has the same name. Otherwise the notes will not be exported.',
       type: 'boolean',

@@ -41,10 +41,12 @@ export declare class TodoistSyncCore {
     private getNote;
     private createNote;
     private static getCompletedNotes;
+    private static getDroppedNotes;
     private getSelectedNotes;
     private static getTags;
     private getTag;
     private createTag;
+    private getFile;
     private getBookById;
     private getBookByNameAndParent;
     private getRootBooks;
@@ -95,6 +97,7 @@ export declare class TodoistSyncCore {
     private todoistTaskIsInAnySection;
     private getTodoistTaskLabels;
     private todoistTaskHasSomeLabels;
+    private getTodoistLabelByName;
     private getTodoistLabelsByNames;
     private getTodoistLabelsFromString;
     private getTodoistTaskCommentString;

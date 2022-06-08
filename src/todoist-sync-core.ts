@@ -24,7 +24,7 @@ import {
 } from './types';
 import {logger} from 'inkdrop';
 
-import type {Note, Book, Tag, TagColor} from 'inkdrop-model';
+import type {File, Note, Book, Tag, TagColor} from 'inkdrop-model';
 import {NOTE_STATUS, TAG_COLOR} from 'inkdrop-model';
 
 export class TodoistSyncCore {
@@ -77,9 +77,8 @@ export class TodoistSyncCore {
     try {
       books = await TodoistSyncCore.getBooks();
       notes = await TodoistSyncCore.getNotes();
-      if (inkdrop.config.get('todoist-sync.exportCompleted')) {
-        notes = notes.concat(await TodoistSyncCore.getCompletedNotes());
-      }
+      notes = notes.concat(await TodoistSyncCore.getCompletedNotes());
+      notes = notes.concat(await TodoistSyncCore.getDroppedNotes());
       tags = await TodoistSyncCore.getTags();
     } catch (error) {
       logger.error('Getting Inkdrop data failed. Details: ' + error);
@@ -535,6 +534,34 @@ export class TodoistSyncCore {
             })
           )
         : [];
+      if (
+        note.status === NOTE_STATUS.ACTIVE &&
+        inkdrop.config.get('todoist-sync.activeLabel')
+      ) {
+        const activeLabel: Label =
+          this.getTodoistLabelByName(
+            inkdrop.config.get('todoist-sync.activeLabel')
+          ) ??
+          (await this.createTodoistLabel(
+            inkdrop.config.get('todoist-sync.activeLabel'),
+            inkdrop.config.get('todoist-sync.labelColor')
+          ));
+        labels.push(activeLabel);
+      }
+      if (
+        note.status === NOTE_STATUS.ON_HOLD &&
+        inkdrop.config.get('todoist-sync.onHoldLabel')
+      ) {
+        const onHoldLabel: Label =
+          this.getTodoistLabelByName(
+            inkdrop.config.get('todoist-sync.onHoldLabel')
+          ) ??
+          (await this.createTodoistLabel(
+            inkdrop.config.get('todoist-sync.onHoldLabel'),
+            inkdrop.config.get('todoist-sync.labelColor')
+          ));
+        labels.push(onHoldLabel);
+      }
 
       const todoistTask = await this.createTodoistTask(
         note.title,
@@ -543,7 +570,10 @@ export class TodoistSyncCore {
         section
       );
 
-      if (note.status === NOTE_STATUS.COMPLETED) {
+      if (
+        note.status === NOTE_STATUS.COMPLETED ||
+        note.status === NOTE_STATUS.DROPPED
+      ) {
         await this.completeTodoistTask(todoistTask);
       }
     }
@@ -579,7 +609,12 @@ export class TodoistSyncCore {
 
   private async exportTag(tag: Tag) {
     if (!this.todoistLabelExists(tag.name)) {
-      await this.createTodoistLabel(tag.name);
+      await this.createTodoistLabel(
+        tag.name,
+        TodoistColorNames[
+          <TodoistColorSetting>inkdrop.config.get('todoist-sync.labelColor')
+        ]
+      );
     }
   }
 
@@ -712,6 +747,15 @@ export class TodoistSyncCore {
       });
   }
 
+  private static getDroppedNotes(): Promise<Note[]> {
+    return inkdrop.main.dataStore
+      .getLocalDB()
+      .notes.findWithStatus(NOTE_STATUS.DROPPED, {limit: null})
+      .then((notes: DbGetNotesResult) => {
+        return notes.docs;
+      });
+  }
+
   private getSelectedNotes(): Note[] {
     return inkdrop.store
       .getState()
@@ -763,6 +807,15 @@ export class TodoistSyncCore {
         const tag: Tag = await this.getTag(result.id);
         this.tags.push(tag);
         return tag;
+      });
+  }
+
+  private getFile(id: string): Promise<File> {
+    return inkdrop.main.dataStore
+      .getLocalDB()
+      .files.get(id)
+      .then((file: File) => {
+        return file;
       });
   }
 
@@ -836,6 +889,13 @@ export class TodoistSyncCore {
     if (
       note.status === 'completed' &&
       !inkdrop.config.get('todoist-sync.exportCompleted')
+    ) {
+      return false;
+    }
+
+    if (
+      note.status === 'dropped' &&
+      !inkdrop.config.get('todoist-sync.exportDropped')
     ) {
       return false;
     }
@@ -1084,10 +1144,17 @@ export class TodoistSyncCore {
       });
   }
 
-  private createTodoistLabel(name: string): Promise<Label> {
+  private createTodoistLabel(
+    name: string,
+    color?: TodoistColor
+  ): Promise<Label> {
     const parameters: AddLabelArgs = {
       name: name.trim(),
     };
+
+    if (color) {
+      parameters.color = color;
+    }
 
     return this.todoistApi
       .addLabel(parameters)
@@ -1327,6 +1394,13 @@ export class TodoistSyncCore {
 
   private todoistTaskHasSomeLabels(task: Task, labels: Label[]) {
     return labels.some(label => task.labelIds.includes(label.id));
+  }
+
+  private getTodoistLabelByName(name: string): Label | null {
+    return (
+      this.todoistLabels.find(label => label.name.trim() === name.trim()) ??
+      null
+    );
   }
 
   private getTodoistLabelsByNames(names: string[]): Label[] {
