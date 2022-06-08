@@ -1,5 +1,3 @@
-# Todoist Sync Readme
-
 # inkdrop-todoist-sync
 ![icon.png](https://github.com/manuelsteiner/inkdrop-todoist-sync/blob/ed57373e7991254b69f98ecb4e8e55b8d2be7601/assets/icon.png?raw=true)
 
