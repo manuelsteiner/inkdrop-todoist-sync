@@ -13,6 +13,7 @@ Todoist Sync is an Inkdrop plugin that allows synchronising of Inkdrop notebooks
 
 ## Screenshot
 ![todoist-sync.png](https://github.com/manuelsteiner/inkdrop-todoist-sync/blob/249f9d4b25dd191f645895327e4dfb6c061df719/assets/todoist-sync.png?raw=true)
+
 The screenshot shows the following UI features.
 
 * Top: Native operating system notification for automatic synchronisation status (end).
