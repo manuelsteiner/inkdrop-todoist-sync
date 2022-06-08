@@ -34,7 +34,7 @@ This approach makes sure that no user data is ever lost. It can however lead to 
 * The notebook is once again exported to Todoist.
 * The project `Todos` in Todoist will now contain two tasks. The already existing `Fix the car` task as well as the newly exported `Fix the car window` task. This is because Todoist Sync can not find a matching task for the renamed note based on the title.
 
-## Synchronisation sequence
+## Synchronisation Sequence
 Todoist Sync offers a setting to change the default synchronisation behaviour. The setting determins the synchronisation direction. The three possible options are as follows.
 
 * `both`  
@@ -93,7 +93,7 @@ Calls `todoist-sync:import-selected-projects`. Imports all Todoist projects star
 Calls `todoist-sync:export-selected-notes`. Exports selected Inkdrop notes to a corresponding Todoist project, depending on the settings.
 
 
-## Keyboard shortcuts
+## Keyboard Shortcuts
 Todoist Sync defines the following default keyboard shortcuts.
 
 * `Ctrl-Alt-t` or `Cmd-Ald-t`  
