@@ -54,6 +54,11 @@ If a synchronisation, export or import is carried out for a notebook that contai
 
 When exporting selected notes, the Inkdrop notebook hierarchy to a root notebook must exist as corresponding Todoist project hierarchy in order for the export to be carried out.
 
+## Installation
+```
+ipm install todoist-sync
+```
+
 ## Commands
 Todoist Sync exposes the following commands, which can be accesed via various menu items or bound to keyboard shortcuts.
 
