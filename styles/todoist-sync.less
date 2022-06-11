@@ -29,9 +29,18 @@
   margin: 1px;
 }
 
-.sidebar-menu-todoist-sync > .feather-icon.animate-spin {
-  animation: spin 2s linear infinite;
-  animation-fill-mode: forwards;
+.loader {
+  width: 1em;
+  height: 1em;
+  margin: 1px;
+  font-size: 16px;
+  border: 2px solid var(--sidebar-sync-status-view-detail-color);
+  border-bottom-color: transparent;
+  border-radius: 50%;
+  display: inline-block;
+  align-self: center;
+  box-sizing: border-box;
+  animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
