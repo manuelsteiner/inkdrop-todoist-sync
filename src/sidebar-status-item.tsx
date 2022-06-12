@@ -58,7 +58,7 @@ export function hide() {
 
 export async function hideDelayed() {
   await sleep(10000);
-  inkdrop.layouts.removeComponentFromLayout(layoutName, componentName);
+  hide();
 }
 
 export function show() {
