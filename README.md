@@ -7,7 +7,7 @@ Todoist Sync is an [Inkdrop](https://www.inkdrop.app) plugin that allows synchro
 * Recursive synchronisation of Inkdrop notebooks and Todoist projects
 * Selective synchronisation, import or export of the whole or a partial Inkdrop notebook tree
 * Automatic recurring synchronisation
-* Highly customasiable via settings
+* Highly customisable via settings
 
 ## Screenshot
 ![todoist-sync.png](https://github.com/manuelsteiner/inkdrop-todoist-sync/blob/249f9d4b25dd191f645895327e4dfb6c061df719/assets/todoist-sync.png?raw=true)
@@ -15,14 +15,14 @@ Todoist Sync is an [Inkdrop](https://www.inkdrop.app) plugin that allows synchro
 The screenshot shows the following UI features.
 
 * Top: Native operating system notification for automatic synchronisation status (end).
-* Botton right: Inkdrop notifications for the synchronisation status (start, end).
+* Bottom right: Inkdrop notifications for the synchronisation status (start, end).
 * Bottom left: Synchronisation status while a synchronisation is in progress (green -> end status).
 
 ## Important Note
 Todoist Sync will only operate on data which is present at the synchronisation source and missing at the target. This means the only operations carried out are the creation of Inkdrop notebooks, notes and tags as well as Todoist projects, sections, tasks, comments and labels. Since Inkdrop and Todoist contain information that is potentially important and valuable to their users, Todoist Sync will **NEVER** delete or alter any existing data. The principle of how elements are synchronised is as follows.
 
 * An Inkdrop notebook or Todoist project will be created if no corresponding element based on the name can be found at the same tree level with the same parent structure
-* An Inkdrop note or Todoist task will be created if no corresponding element can be found with the same title/name (taking the parent hierachy into account, depending on the settings)
+* An Inkdrop note or Todoist task will be created if no corresponding element can be found with the same title/name (taking the parent hierarchy into account, depending on the settings)
 * A Todoist section will be created if no corresponding project can be found for a leaf notebook based on the name, depending on the settings.
 * Inkdrop tags or Todoist labels will be created if no corresponding element with the same name can be found.
 
@@ -38,7 +38,7 @@ This approach makes sure that no user data is ever lost. It can however lead to 
 Todoist Sync offers a setting to change the default synchronisation behaviour. The setting determins the synchronisation direction. The three possible options are as follows.
 
 * `both`  
-Todoist Sync first exports all elements present in Inkdrop but missing in Todoist. AFterwards, all elements present in Todoist but missing in Inkdrop will be imported.  
+Todoist Sync first exports all elements present in Inkdrop but missing in Todoist. Afterwards, all elements present in Todoist but missing in Inkdrop will be imported.  
 * `export`  
 Todoist Sync will only export elements which are missing in Todoist.  
 * `import`  
@@ -49,10 +49,17 @@ If a synchronisation, export or import is carried out for a notebook that contai
 * The selected Inkdrop notebook is synchronised, exported or a corresponding Todoist project is imported. If no corresponding Todoist project hierarchy is found up to the a Inkdrop root notebook, the missing Todoist projects will be created. In the case of an import, the hierarchy of Todoist projects must match the Inkdrop notebook hierarchy for the import process to be started.
 * All Inkdrop notes that are direct children of the notebook are synchronised, exported or the corresponding direct children of the Todoist project are imported.
 * Depending on the setting, sub tasks of the tasks that were just imported are also imported.
-* The process is repated with all children notebooks of the selected notbook. The notebooks are handled recurisvely til all leaf notebooks were handled.
+* The process is repeated with all children notebooks of the selected notebook. The notebooks are handled recursively until all leaf notebooks were handled.
 * Todoist project and task comments are attached as notes in a notebook or in a note body respectively if relevant settings are enabled.
 
 When exporting selected notes, the Inkdrop notebook hierarchy to a root notebook must exist as corresponding Todoist project hierarchy in order for the export to be carried out.
+
+## A Note on Performance
+Todoist Sync in its current implementation will fetch all Inkdrop notebook, note and tag data as well as Todoist project, section, task and label data into memory before starting the synchronisation/export/import process. This is mainly due to the fact that Todoist imposes a `450` API request limit per `15` minute interval. Fetching all data beforehand minimises the requests needed for synchronisation.
+
+In case of performance issues, the plugin can be reworked to fetch data lazily when needed. Especially data from the Todoist API. This would mainly fetch sections and tasks for projects as well as sub tasks when necessary. Such a process would however come at the cost of a higher number of API calls to Todoist and the limit might be hit quicker.
+
+A rework of fetching Inkdrop data from the local database lazily would have no consequences but potentially benefit performance by only fetching notes for specific notebooks when needed.
 
 ## Installation
 ```

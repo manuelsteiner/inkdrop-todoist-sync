@@ -22,9 +22,8 @@ import {
   TodoistColorNames,
   TodoistColorSetting,
 } from './types';
-import {logger} from 'inkdrop';
 
-import type {File, Note, Book, Tag, TagColor} from 'inkdrop-model';
+import type {Note, Book, Tag, TagColor} from 'inkdrop-model';
 import {NOTE_STATUS, TAG_COLOR} from 'inkdrop-model';
 
 export class TodoistSyncCore {
@@ -33,30 +32,30 @@ export class TodoistSyncCore {
   private tags: Tag[];
 
   private todoistApi: TodoistApi;
-  private todoistProjects: Project[];
-  private todoistSections: Section[];
-  private todoistTasks: Task[];
-  private todoistLabels: Label[];
+  private projects: Project[];
+  private sections: Section[];
+  private tasks: Task[];
+  private labels: Label[];
 
   constructor(
     books: Book[],
     notes: Note[],
     tags: Tag[],
     todoistApi: TodoistApi,
-    todoistProjects: Project[],
-    todoistSections: Section[],
-    todoistTasks: Task[],
-    todoistLabels: Label[]
+    projects: Project[],
+    sections: Section[],
+    tasks: Task[],
+    labels: Label[]
   ) {
     this.books = books;
     this.notes = notes;
     this.tags = tags;
 
     this.todoistApi = todoistApi;
-    this.todoistProjects = todoistProjects;
-    this.todoistSections = todoistSections;
-    this.todoistTasks = todoistTasks;
-    this.todoistLabels = todoistLabels;
+    this.projects = projects;
+    this.sections = sections;
+    this.tasks = tasks;
+    this.labels = labels;
   }
 
   static async construct(): Promise<TodoistSyncCore> {
@@ -65,10 +64,10 @@ export class TodoistSyncCore {
     let tags: Tag[] | null = null;
 
     const todoistApi: TodoistApi | null = TodoistSyncCore.getTodoistApi();
-    let todoistProjects: Project[] | null = null;
-    let todoistSections: Section[] | null = null;
-    let todoistTasks: Task[] | null = null;
-    let todoistLabels: Label[] | null = null;
+    let projects: Project[] | null = null;
+    let sections: Section[] | null = null;
+    let tasks: Task[] | null = null;
+    let labels: Label[] | null = null;
 
     if (!todoistApi) {
       throw new Error('Todoist API initialisation failed.');
@@ -81,17 +80,15 @@ export class TodoistSyncCore {
       notes = notes.concat(await TodoistSyncCore.getDroppedNotes());
       tags = await TodoistSyncCore.getTags();
     } catch (error) {
-      logger.error('Getting Inkdrop data failed. Details: ' + error);
       throw new Error('Getting Inkdrop data failed.');
     }
 
     try {
-      todoistProjects = await TodoistSyncCore.getTodoistProjects(todoistApi);
-      todoistSections = await TodoistSyncCore.getTodoistSections(todoistApi);
-      todoistTasks = await TodoistSyncCore.getTodoistTasks(todoistApi);
-      todoistLabels = await TodoistSyncCore.getTodoistLabels(todoistApi);
+      projects = await TodoistSyncCore.getProjects(todoistApi);
+      sections = await TodoistSyncCore.getSections(todoistApi);
+      tasks = await TodoistSyncCore.getTasks(todoistApi);
+      labels = await TodoistSyncCore.getLabels(todoistApi);
     } catch (error) {
-      logger.error('Getting Todoist data failed. Details: ' + error);
       throw new Error('Getting Todoist data failed.');
     }
 
@@ -100,10 +97,10 @@ export class TodoistSyncCore {
       notes,
       tags,
       todoistApi,
-      todoistProjects,
-      todoistSections,
-      todoistTasks,
-      todoistLabels
+      projects,
+      sections,
+      tasks,
+      labels
     );
   }
 
@@ -148,25 +145,25 @@ export class TodoistSyncCore {
   }
 
   public async importAllProjects() {
-    await this.importProjects(this.getTodoistRootProjects());
+    await this.importProjects(this.getRootProjects());
   }
 
   public async importSelectedProjects() {
     const book = inkdrop.store.getState().bookList.bookForContextMenu;
     const bookHierarchy = this.getBookHierarchy(book);
 
-    const todoistProject =
-      this.getTodoistProjectHierarchyByBookHierarchy(bookHierarchy)?.pop();
+    const project =
+      this.getProjectHierarchyByBookHierarchy(bookHierarchy)?.pop();
 
-    if (!todoistProject) {
+    if (!project) {
       throw new Error(
         'The notebook hierarchy containing ' +
           book.name +
-          ' does not exist as task hierarchy in Todoist.'
+          ' does not exist as project hierarchy in Todoist.'
       );
     }
 
-    await this.importProject(todoistProject);
+    await this.importProject(project);
   }
 
   private async importProjects(projects: Project[]) {
@@ -176,16 +173,14 @@ export class TodoistSyncCore {
   }
 
   private async importProject(project: Project) {
-    await this.importTasks(this.getTodoistProjectTasks(project));
+    await this.importTasks(this.getProjectTasks(project));
     if (inkdrop.config.get('todoist-sync.importSubTasks')) {
-      await this.importTasks(this.getTodoistProjectSubTasks(project));
+      await this.importTasks(this.getProjectSubTasks(project));
     }
     if (inkdrop.config.get('todoist-sync.importProjectComments')) {
-      await this.importComments(
-        await this.getTodoistCommentsForProject(project)
-      );
+      await this.importComments(await this.getCommentsForProject(project));
     }
-    await this.importProjects(this.getTodoistSubProjects(project));
+    await this.importProjects(this.getSubProjects(project));
   }
 
   public async exportAllBooks() {
@@ -211,38 +206,28 @@ export class TodoistSyncCore {
 
   private async importTasks(tasks: Task[]) {
     for (const task of tasks) {
-      //try {
-      await this.importTask(task);
+      try {
+        await this.importTask(task);
 
-      //if(inkdrop.config.get('todoist-sync.importSubTasks')) {
-      //  for (const subTask of this.getTodoistSubTasks(task)) {
-      //    await this.importTask(subTask);
-      //  }
-      //}
-      //} catch(error) {
-      //  logger.error(
-      //      'Importing single task failed. Details: ' + error
-      //  );
-      //  throw new Error('Importing single task fimportTaskailed.');
-      //}
+        if (inkdrop.config.get('todoist-sync.importSubTasks')) {
+          for (const subTask of this.getSubTasks(task)) {
+            await this.importTask(subTask);
+          }
+        }
+      } catch (error) {
+        throw new Error('Importing task failed.');
+      }
     }
   }
 
   private async importTask(task: Task) {
-    if (!this.todoistTaskCanBeImported(task)) {
+    if (!this.taskCanBeImported(task)) {
       return;
     }
 
-    const project = this.getTodoistProjectById(task.projectId);
+    const project = this.getProjectById(task.projectId);
 
     if (!project) {
-      logger.error(
-        'Todoist project ' +
-          task.projectId +
-          ' (from task ' +
-          task.id +
-          ') not found.'
-      );
       throw new Error(
         'Todoist project ' +
           task.projectId +
@@ -268,9 +253,7 @@ export class TodoistSyncCore {
       inkdrop.config.get('todoist-sync.importSectionsAsNotebooks') &&
       task.sectionId
     ) {
-      const section: Section | null = this.getTodoistSectionById(
-        task.sectionId
-      );
+      const section: Section | null = this.getSectionById(task.sectionId);
 
       if (!section) {
         throw new Error(
@@ -289,7 +272,7 @@ export class TodoistSyncCore {
 
     if (book && !this.bookContainsNoteWithTitle(book, task.content)) {
       const labels: Label[] = inkdrop.config.get('todoist-sync.syncTags')
-        ? this.getTodoistTaskLabels(task)
+        ? this.getTaskLabels(task)
         : [];
       if (inkdrop.config.get('todoist-sync.syncTags')) {
         await this.importLabels(labels);
@@ -309,7 +292,7 @@ export class TodoistSyncCore {
         : '';
 
       if (inkdrop.config.get('todoist-sync.importTaskComments')) {
-        const commentsString = await this.getTodoistTaskCommentString(task);
+        const commentsString = await this.getTaskCommentString(task);
         taskDescription = taskDescription ? taskDescription + '\n\n' : '';
         taskDescription = commentsString
           ? taskDescription + commentsString
@@ -322,12 +305,11 @@ export class TodoistSyncCore {
 
   private async importLabels(labels: Label[]) {
     for (const label of labels) {
-      //try {
-      await this.importLabel(label);
-      //} catch (error) {
-      //  logger.error('Importing single label failed. Details: ' + error);
-      //  throw new Error('Importing single label failed.');
-      //}
+      try {
+        await this.importLabel(label);
+      } catch (error) {
+        throw new Error('Importing label failed.');
+      }
     }
   }
 
@@ -345,32 +327,21 @@ export class TodoistSyncCore {
       try {
         await this.importComment(comment);
       } catch (error) {
-        logger.error('Importing single comment failed. Details: ' + error);
-        throw new Error('Importing single comment failed.');
+        throw new Error('Importing comment failed.');
       }
     }
   }
 
   private async importComment(comment: Comment) {
     if (!comment.projectId) {
-      logger.error(
-        'Todoist comment ' + comment.id + ' is not attached to a project.'
-      );
       throw new Error(
         'Todoist comment ' + comment.id + ' is not attached to a project.'
       );
     }
 
-    const project = this.getTodoistProjectById(comment.projectId);
+    const project = this.getProjectById(comment.projectId);
 
     if (!project) {
-      logger.error(
-        'Todoist project ' +
-          comment.projectId +
-          ' (from comment ' +
-          comment.id +
-          ') not found.'
-      );
       throw new Error(
         'Todoist project ' +
           comment.projectId +
@@ -406,7 +377,6 @@ export class TodoistSyncCore {
     try {
       await this.exportNotes(notes, projectName, true);
     } catch (error) {
-      logger.error('Exporting notes failed. Details: ' + error);
       throw new Error('Exporting selected notes failed.');
     }
   }
@@ -417,20 +387,23 @@ export class TodoistSyncCore {
     forceExport?: boolean
   ) {
     for (const note of notes) {
-      // try {
-      projectName
-        ? await this.exportNoteToProjectWithName(note, projectName, forceExport)
-        : await this.exportNote(note, undefined, forceExport);
-      // } catch (error) {
-      //   logger.error('Exporting single note failed. Details: ' + error);
-      //   throw new Error('Exporting single note failed.');
-      // }
+      try {
+        projectName
+          ? await this.exportNoteToProjectWithName(
+              note,
+              projectName,
+              forceExport
+            )
+          : await this.exportNote(note, undefined, forceExport);
+      } catch (error) {
+        throw new Error('Exporting note failed.');
+      }
     }
   }
 
   private async exportNote(
     note: Note,
-    todoistProject?: Project,
+    targetProject?: Project,
     forceExport?: boolean
   ) {
     if (!forceExport && !this.noteCanBeExported(note)) {
@@ -441,9 +414,6 @@ export class TodoistSyncCore {
     let project: Project | undefined = undefined;
 
     if (!book) {
-      logger.error(
-        'Book ' + note.bookId + ' (from note ' + note._id + ') not found.'
-      );
       throw new Error(
         'Book ' + note.bookId + ' (from note ' + note._id + ') not found.'
       );
@@ -452,12 +422,10 @@ export class TodoistSyncCore {
     if (
       inkdrop.config.get('todoist-sync.exportNotebooksAsSections') &&
       !inkdrop.config.get('todoist-sync.exportSection').length &&
-      !todoistProject &&
+      !targetProject &&
       book.parentBookId &&
       !this.getSubBooks(book).length &&
-      !this.getTodoistProjectHierarchyByBookHierarchy(
-        this.getBookHierarchy(book)
-      )
+      !this.getProjectHierarchyByBookHierarchy(this.getBookHierarchy(book))
     ) {
       const parentBook: Book | null = this.getBookById(book.parentBookId);
 
@@ -471,11 +439,10 @@ export class TodoistSyncCore {
         );
       }
 
-      project = await this.createTodoistProjectHierarchyToRoot(parentBook);
+      project = await this.createProjectHierarchyToRoot(parentBook);
     } else {
       project =
-        todoistProject ??
-        (await this.createTodoistProjectHierarchyToRoot(book));
+        targetProject ?? (await this.createProjectHierarchyToRoot(book));
     }
 
     if (!project) {
@@ -488,10 +455,7 @@ export class TodoistSyncCore {
       );
     }
 
-    if (
-      project &&
-      !this.todoistProjectContainsTaskWithContent(project, note.title)
-    ) {
+    if (project && !this.projectContainsTaskWithContent(project, note.title)) {
       let section: Section | undefined = undefined;
 
       if (
@@ -502,20 +466,20 @@ export class TodoistSyncCore {
         project.name.trim() === this.getBookById(book.parentBookId)?.name.trim()
       ) {
         section =
-          this.getTodoistSectionByNameAndProject(book.name, project) ??
-          (await this.createTodoistSection(book.name, project));
+          this.getSectionByNameAndProject(book.name, project) ??
+          (await this.createSection(book.name, project));
       } else if (
         inkdrop.config.get('todoist-sync.exportSection') &&
-        !this.todoistProjectContainsSectionWithName(
+        !this.projectContainsSectionWithName(
           project,
           inkdrop.config.get('todoist-sync.exportSection')
         )
       ) {
         section =
-          this.getTodoistSectionByName(
+          this.getSectionByName(
             inkdrop.config.get('todoist-sync.exportSection')
           ) ??
-          (await this.createTodoistSection(
+          (await this.createSection(
             inkdrop.config.get('todoist-sync.exportSection'),
             project
           ));
@@ -528,7 +492,7 @@ export class TodoistSyncCore {
         await this.exportTags(tags);
       }
       const labels: Label[] = inkdrop.config.get('todoist-sync.syncTags')
-        ? this.getTodoistLabelsByNames(
+        ? this.getLabelsByNames(
             tags.map(tag => {
               return tag.name;
             })
@@ -539,10 +503,8 @@ export class TodoistSyncCore {
         inkdrop.config.get('todoist-sync.activeLabel')
       ) {
         const activeLabel: Label =
-          this.getTodoistLabelByName(
-            inkdrop.config.get('todoist-sync.activeLabel')
-          ) ??
-          (await this.createTodoistLabel(
+          this.getLabelByName(inkdrop.config.get('todoist-sync.activeLabel')) ??
+          (await this.createLabel(
             inkdrop.config.get('todoist-sync.activeLabel'),
             inkdrop.config.get('todoist-sync.labelColor')
           ));
@@ -553,17 +515,15 @@ export class TodoistSyncCore {
         inkdrop.config.get('todoist-sync.onHoldLabel')
       ) {
         const onHoldLabel: Label =
-          this.getTodoistLabelByName(
-            inkdrop.config.get('todoist-sync.onHoldLabel')
-          ) ??
-          (await this.createTodoistLabel(
+          this.getLabelByName(inkdrop.config.get('todoist-sync.onHoldLabel')) ??
+          (await this.createLabel(
             inkdrop.config.get('todoist-sync.onHoldLabel'),
             inkdrop.config.get('todoist-sync.labelColor')
           ));
         labels.push(onHoldLabel);
       }
 
-      const todoistTask = await this.createTodoistTask(
+      const task = await this.createTask(
         note.title,
         inkdrop.config.get('todoist-sync.exportNoteBodies')
           ? note.body
@@ -577,7 +537,7 @@ export class TodoistSyncCore {
         note.status === NOTE_STATUS.COMPLETED ||
         note.status === NOTE_STATUS.DROPPED
       ) {
-        await this.completeTodoistTask(todoistTask);
+        await this.completeTask(task);
       }
     }
   }
@@ -588,8 +548,8 @@ export class TodoistSyncCore {
     forceExport?: boolean
   ) {
     const project =
-      this.getTodoistProjectByName(projectName) ??
-      (await this.createTodoistProject(
+      this.getProjectByName(projectName) ??
+      (await this.createProject(
         projectName,
         TodoistColorNames[
           <TodoistColorSetting>inkdrop.config.get('todoist-sync.projectColor')
@@ -604,15 +564,14 @@ export class TodoistSyncCore {
       try {
         await this.exportTag(tag);
       } catch (error) {
-        logger.error('Exporting single tag failed. Details: ' + error);
         throw new Error('Exporting single tag failed.');
       }
     }
   }
 
   private async exportTag(tag: Tag) {
-    if (!this.todoistLabelExists(tag.name)) {
-      await this.createTodoistLabel(
+    if (!this.labelExists(tag.name)) {
+      await this.createLabel(
         tag.name,
         TodoistColorNames[
           <TodoistColorSetting>inkdrop.config.get('todoist-sync.labelColor')
@@ -666,17 +625,16 @@ export class TodoistSyncCore {
   private async createBookHierarchyToRoot(
     project: Project
   ): Promise<Book | undefined> {
-    const todoistProjectHierarchy = this.getTodoistProjectHierarchy(project);
+    const projectHierarchy = this.getProjectHierarchy(project);
     let currentBook: Book | undefined = undefined;
 
     try {
-      for (const project of todoistProjectHierarchy) {
+      for (const project of projectHierarchy) {
         currentBook =
           this.getBookByNameAndParent(project.name, currentBook) ??
           (await this.createBook(project.name, currentBook));
       }
     } catch (error) {
-      logger.error('Creating book hierarchy failed. Details: ' + error);
       throw new Error('Creating book hierarchy failed.');
     }
 
@@ -813,15 +771,6 @@ export class TodoistSyncCore {
       });
   }
 
-  private getFile(id: string): Promise<File> {
-    return inkdrop.main.dataStore
-      .getLocalDB()
-      .files.get(id)
-      .then((file: File) => {
-        return file;
-      });
-  }
-
   private getBookById(bookId: string): Book | null {
     return this.books.find(book => book._id === bookId) ?? null;
   }
@@ -924,12 +873,6 @@ export class TodoistSyncCore {
     return tags.some(tag => note.tags?.includes(tag._id));
   }
 
-  private noteHasTagWithName(note: Note, tagName: string): boolean {
-    return this.tags.some(
-      tag => tag.name.trim() === tagName.trim() && note.tags?.includes(tag._id)
-    );
-  }
-
   private tagExists(name: string): boolean {
     return this.tags.some(tag => tag.name.trim() === name.trim());
   }
@@ -963,9 +906,7 @@ export class TodoistSyncCore {
     return new TodoistApi(inkdrop.config.get('todoist-sync.apiKey'));
   }
 
-  private static getTodoistProjects(
-    todoistApi: TodoistApi
-  ): Promise<Project[]> {
+  private static getProjects(todoistApi: TodoistApi): Promise<Project[]> {
     return todoistApi
       .getProjects()
       .then(projects => {
@@ -977,7 +918,7 @@ export class TodoistSyncCore {
       });
   }
 
-  private createTodoistProject(
+  private createProject(
     name: string,
     color?: TodoistColor,
     parent?: Project
@@ -997,7 +938,7 @@ export class TodoistSyncCore {
     return this.todoistApi
       .addProject(parameters)
       .then(project => {
-        this.todoistProjects.push(project);
+        this.projects.push(project);
         return project;
       })
       .catch(error => {
@@ -1006,40 +947,34 @@ export class TodoistSyncCore {
       });
   }
 
-  private async createTodoistProjectHierarchyToRoot(
+  private async createProjectHierarchyToRoot(
     book: Book
   ): Promise<Project | undefined> {
     const bookHierarchy = this.getBookHierarchy(book);
-    let currentTodoistProject: Project | undefined = undefined;
+    let currentProject: Project | undefined = undefined;
 
     try {
       for (const book of bookHierarchy) {
-        currentTodoistProject =
-          this.getTodoistProjectByNameAndParent(
-            book.name,
-            currentTodoistProject
-          ) ??
-          (await this.createTodoistProject(
+        currentProject =
+          this.getProjectByNameAndParent(book.name, currentProject) ??
+          (await this.createProject(
             book.name,
             TodoistColorNames[
               <TodoistColorSetting>(
                 inkdrop.config.get('todoist-sync.projectColor')
               )
             ],
-            currentTodoistProject
+            currentProject
           ));
       }
     } catch (error) {
-      logger.error('Creating Todoist task hierarchy failed. Details: ' + error);
       throw new Error('Creating Todoist task hierarchy failed.');
     }
 
-    return currentTodoistProject;
+    return currentProject;
   }
 
-  private static getTodoistSections(
-    todoistApi: TodoistApi
-  ): Promise<Section[]> {
+  private static getSections(todoistApi: TodoistApi): Promise<Section[]> {
     return todoistApi
       .getSections()
       .then(projects => {
@@ -1051,10 +986,7 @@ export class TodoistSyncCore {
       });
   }
 
-  private createTodoistSection(
-    name: string,
-    project: Project
-  ): Promise<Section> {
+  private createSection(name: string, project: Project): Promise<Section> {
     const parameters: AddSectionArgs = {
       name: name.trim(),
       projectId: project.id,
@@ -1063,7 +995,7 @@ export class TodoistSyncCore {
     return this.todoistApi
       .addSection(parameters)
       .then(section => {
-        this.todoistSections.push(section);
+        this.sections.push(section);
         return section;
       })
       .catch(error => {
@@ -1072,7 +1004,7 @@ export class TodoistSyncCore {
       });
   }
 
-  private static getTodoistTasks(todoistApi: TodoistApi): Promise<Task[]> {
+  private static getTasks(todoistApi: TodoistApi): Promise<Task[]> {
     return todoistApi
       .getTasks()
       .then((tasks: Task[]) => {
@@ -1084,7 +1016,7 @@ export class TodoistSyncCore {
       });
   }
 
-  private createTodoistTask(
+  private createTask(
     content: string,
     description?: string,
     labels?: Label[],
@@ -1121,7 +1053,7 @@ export class TodoistSyncCore {
     return this.todoistApi
       .addTask(parameters)
       .then(task => {
-        this.todoistTasks.push(task);
+        this.tasks.push(task);
         return task;
       })
       .catch(error => {
@@ -1130,7 +1062,7 @@ export class TodoistSyncCore {
       });
   }
 
-  private completeTodoistTask(task: Task) {
+  private completeTask(task: Task) {
     return this.todoistApi
       .closeTask(task.id)
       .then()
@@ -1140,7 +1072,7 @@ export class TodoistSyncCore {
       });
   }
 
-  private static getTodoistLabels(todoistApi: TodoistApi): Promise<Label[]> {
+  private static getLabels(todoistApi: TodoistApi): Promise<Label[]> {
     return todoistApi
       .getLabels()
       .then(labels => {
@@ -1152,12 +1084,9 @@ export class TodoistSyncCore {
       });
   }
 
-  private createTodoistLabel(
-    name: string,
-    color?: TodoistColor
-  ): Promise<Label> {
+  private createLabel(name: string, color?: TodoistColor): Promise<Label> {
     const parameters: AddLabelArgs = {
-      name: name.trim(),
+      name: name.trim().replace(/[ @!"(),\\]/g, '_'),
     };
 
     if (color) {
@@ -1167,7 +1096,7 @@ export class TodoistSyncCore {
     return this.todoistApi
       .addLabel(parameters)
       .then(label => {
-        this.todoistLabels.push(label);
+        this.labels.push(label);
         return label;
       })
       .catch(error => {
@@ -1176,7 +1105,7 @@ export class TodoistSyncCore {
       });
   }
 
-  private getTodoistCommentsForProject(project: Project): Promise<Comment[]> {
+  private getCommentsForProject(project: Project): Promise<Comment[]> {
     return this.todoistApi
       .getComments({projectId: project.id})
       .then(comments => {
@@ -1188,7 +1117,7 @@ export class TodoistSyncCore {
       });
   }
 
-  private getTodoistCommentsForTask(task: Task): Promise<Comment[]> {
+  private getCommentsForTask(task: Task): Promise<Comment[]> {
     return this.todoistApi
       .getComments({taskId: task.id})
       .then(comments => {
@@ -1200,32 +1129,26 @@ export class TodoistSyncCore {
       });
   }
 
-  private todoistProjectExists(name: string): boolean {
-    return this.todoistProjects.some(
-      project => project.name.trim() === name.trim()
-    );
+  private projectExists(name: string): boolean {
+    return this.projects.some(project => project.name.trim() === name.trim());
   }
 
-  private getTodoistProjectById(projectId: number): Project | null {
+  private getProjectById(projectId: number): Project | null {
+    return this.projects.find(project => project.id === projectId) ?? null;
+  }
+
+  private getProjectByName(name: string): Project | null {
     return (
-      this.todoistProjects.find(project => project.id === projectId) ?? null
+      this.projects.find(project => project.name.trim() === name.trim()) ?? null
     );
   }
 
-  private getTodoistProjectByName(name: string): Project | null {
-    return (
-      this.todoistProjects.find(
-        project => project.name.trim() === name.trim()
-      ) ?? null
-    );
-  }
-
-  private getTodoistProjectByNameAndParent(
+  private getProjectByNameAndParent(
     name: string,
     parent?: Project
   ): Project | null {
     return (
-      this.todoistProjects.find(
+      this.projects.find(
         project =>
           project.name.trim() === name.trim() &&
           ((parent && project.parentId === parent.id) ||
@@ -1234,119 +1157,98 @@ export class TodoistSyncCore {
     );
   }
 
-  private getTodoistRootProjects(): Project[] {
-    return this.todoistProjects.filter(
-      project => project.parentId === undefined
-    );
+  private getRootProjects(): Project[] {
+    return this.projects.filter(project => project.parentId === undefined);
   }
 
-  private getTodoistProjectHierarchyByBookHierarchy(
+  private getProjectHierarchyByBookHierarchy(
     bookHierarchy: Book[]
   ): Project[] | null {
-    const todoistProjectHierarchy: Project[] = [];
-    let currentTodoistProject: Project | null | undefined = undefined;
+    const projectHierarchy: Project[] = [];
+    let currentProject: Project | null | undefined = undefined;
 
     for (const book of bookHierarchy) {
-      currentTodoistProject = this.getTodoistProjectByNameAndParent(
+      currentProject = this.getProjectByNameAndParent(
         book.name,
-        currentTodoistProject
+        currentProject
       );
 
-      if (!currentTodoistProject) {
-        //logger.error('Error');
-        //   'Getting Todoist project hierarchy for book hierarchy ' +
-        //     bookHierarchy
-        //       .map(book => {
-        //         return book.name;
-        //       })
-        //       .join(', ') +
-        //     ' failed.'
-        // );
+      if (!currentProject) {
         return null;
       }
 
-      todoistProjectHierarchy.push(currentTodoistProject);
+      projectHierarchy.push(currentProject);
     }
 
-    return todoistProjectHierarchy;
+    return projectHierarchy;
   }
 
-  private getTodoistSubProjects(project: Project): Project[] {
-    return this.todoistProjects.filter(
+  private getSubProjects(project: Project): Project[] {
+    return this.projects.filter(
       filterProject => filterProject.parentId === project.id
     );
   }
 
-  private getTodoistProjectHierarchy(project: Project): Project[] {
+  private getProjectHierarchy(project: Project): Project[] {
     const projectHierarchy: Project[] = [];
     let currentProject: Project | null = project;
 
     while (currentProject) {
       projectHierarchy.unshift(currentProject);
       currentProject = currentProject.parentId
-        ? this.getTodoistProjectById(currentProject.parentId)
+        ? this.getProjectById(currentProject.parentId)
         : null;
     }
 
     return projectHierarchy;
   }
 
-  private getTodoistProjectSections(project: Project): Section[] {
-    return this.todoistSections.filter(
-      section => section.projectId === project.id
-    );
-  }
-
-  private getTodoistProjectTasks(project: Project): Task[] {
-    return this.todoistTasks.filter(
+  private getProjectTasks(project: Project): Task[] {
+    return this.tasks.filter(
       task => task.projectId === project.id && task.parentId === undefined
     );
   }
 
-  private getTodoistProjectSubTasks(project: Project): Task[] {
-    return this.todoistTasks.filter(
+  private getProjectSubTasks(project: Project): Task[] {
+    return this.tasks.filter(
       task => task.projectId === project.id && task.parentId !== undefined
     );
   }
 
-  private getTodoistSectionsFromString(sectionString: string): Section[] {
-    return this.getTodoistSectionsByNames(
+  private getSectionsFromString(sectionString: string): Section[] {
+    return this.getSectionsByNames(
       sectionString.split(',').map(sectionName => {
         return sectionName.trim().replace(/^"|"$/g, '');
       })
     );
   }
 
-  private getTodoistSectionsByNames(names: string[]): Section[] {
+  private getSectionsByNames(names: string[]): Section[] {
     const sectionNames: string[] = names.map(name => {
       return name.trim();
     });
 
-    return this.todoistSections.filter(section =>
+    return this.sections.filter(section =>
       sectionNames.includes(section.name.trim())
     );
   }
 
-  private getTodoistSectionById(sectionId: number): Section | null {
+  private getSectionById(sectionId: number): Section | null {
+    return this.sections.find(section => section.id === sectionId) ?? null;
+  }
+
+  private getSectionByName(name: string): Section | null {
     return (
-      this.todoistSections.find(section => section.id === sectionId) ?? null
+      this.sections.find(section => section.name.trim() === name.trim()) ?? null
     );
   }
 
-  private getTodoistSectionByName(name: string): Section | null {
-    return (
-      this.todoistSections.find(
-        section => section.name.trim() === name.trim()
-      ) ?? null
-    );
-  }
-
-  private getTodoistSectionByNameAndProject(
+  private getSectionByNameAndProject(
     name: string,
     project: Project
   ): Section | null {
     return (
-      this.todoistSections.find(
+      this.sections.find(
         section =>
           section.name.trim() === name.trim() &&
           section.projectId === project.id
@@ -1354,16 +1256,16 @@ export class TodoistSyncCore {
     );
   }
 
-  private getTodoistSectionTasks(section: Section): Task[] {
-    return this.todoistTasks.filter(task => task.projectId === section.id);
+  private getSectionTasks(section: Section): Task[] {
+    return this.tasks.filter(task => task.projectId === section.id);
   }
 
-  private todoistTaskCanBeImported(task: Task): boolean {
+  private taskCanBeImported(task: Task): boolean {
     if (
       inkdrop.config.get('todoist-sync.importLabels') &&
-      !this.todoistTaskHasSomeLabels(
+      !this.taskHasSomeLabels(
         task,
-        this.getTodoistLabelsFromString(
+        this.getLabelsFromString(
           inkdrop.config.get('todoist-sync.importLabels')
         )
       )
@@ -1373,9 +1275,9 @@ export class TodoistSyncCore {
 
     if (
       inkdrop.config.get('todoist-sync.importSections') &&
-      !this.todoistTaskIsInAnySection(
+      !this.taskIsInAnySection(
         task,
-        this.getTodoistSectionsFromString(
+        this.getSectionsFromString(
           inkdrop.config.get('todoist-sync.importSections')
         )
       )
@@ -1386,51 +1288,48 @@ export class TodoistSyncCore {
     return true;
   }
 
-  private getTodoistSubTasks(task: Task): Task[] {
-    return this.todoistTasks.filter(
-      filterTask => filterTask.parentId === task.id
-    );
+  private getSubTasks(task: Task): Task[] {
+    return this.tasks.filter(filterTask => filterTask.parentId === task.id);
   }
 
-  private todoistTaskIsInAnySection(task: Task, sections: Section[]) {
+  private taskIsInAnySection(task: Task, sections: Section[]) {
     return sections.some(section => section.id === task.sectionId);
   }
 
-  private getTodoistTaskLabels(task: Task): Label[] {
-    return this.todoistLabels.filter(label => task.labelIds.includes(label.id));
+  private getTaskLabels(task: Task): Label[] {
+    return this.labels.filter(label => task.labelIds.includes(label.id));
   }
 
-  private todoistTaskHasSomeLabels(task: Task, labels: Label[]) {
+  private taskHasSomeLabels(task: Task, labels: Label[]) {
     return labels.some(label => task.labelIds.includes(label.id));
   }
 
-  private getTodoistLabelByName(name: string): Label | null {
+  private getLabelByName(name: string): Label | null {
     return (
-      this.todoistLabels.find(label => label.name.trim() === name.trim()) ??
-      null
+      this.labels.find(
+        label => label.name.trim() === name.trim().replace(/[ @!"(),\\]/g, '_')
+      ) ?? null
     );
   }
 
-  private getTodoistLabelsByNames(names: string[]): Label[] {
+  private getLabelsByNames(names: string[]): Label[] {
     const labelNames: string[] = names.map(name => {
-      return name.trim();
+      return name.trim().replace(/[ @!"(),\\]/g, '_');
     });
 
-    return this.todoistLabels.filter(label =>
-      labelNames.includes(label.name.trim())
-    );
+    return this.labels.filter(label => labelNames.includes(label.name.trim()));
   }
 
-  private getTodoistLabelsFromString(tagString: string): Label[] {
-    return this.getTodoistLabelsByNames(
+  private getLabelsFromString(tagString: string): Label[] {
+    return this.getLabelsByNames(
       tagString.split(',').map(tagName => {
         return tagName.trim().replace(/^"|"$/g, '');
       })
     );
   }
 
-  private async getTodoistTaskCommentString(task: Task): Promise<string> {
-    const comments = await this.getTodoistCommentsForTask(task);
+  private async getTaskCommentString(task: Task): Promise<string> {
+    const comments = await this.getCommentsForTask(task);
 
     if (!comments.length) {
       return '';
@@ -1449,18 +1348,18 @@ export class TodoistSyncCore {
     return commentsString;
   }
 
-  private todoistProjectContainsSectionWithName(
+  private projectContainsSectionWithName(
     project: Project,
     sectionName: string
   ) {
-    return this.todoistSections.some(
+    return this.sections.some(
       section =>
         section.name.trim() === sectionName.trim() &&
         section.projectId === project.id
     );
   }
 
-  private todoistProjectContainsTaskWithContent(
+  private projectContainsTaskWithContent(
     project: Project,
     taskContent: string
   ): boolean {
@@ -1473,7 +1372,7 @@ export class TodoistSyncCore {
     }
 
     return inkdrop.config.get('todoist-sync.exportExistingSubTasks')
-      ? this.todoistTasks.some(
+      ? this.tasks.some(
           task =>
             (startsWith
               ? task.content.startsWith(taskContent)
@@ -1481,7 +1380,7 @@ export class TodoistSyncCore {
             task.projectId === project.id &&
             task.parentId === undefined
         )
-      : this.todoistTasks.some(
+      : this.tasks.some(
           task =>
             (startsWith
               ? task.content.startsWith(taskContent)
@@ -1489,40 +1388,21 @@ export class TodoistSyncCore {
         );
   }
 
-  private todoistSectionContainsTaskWithContent(
-    section: Section,
-    taskContent: string
-  ): boolean {
-    return this.todoistTasks.some(
-      task =>
-        task.content.trim() === taskContent.trim() &&
-        task.sectionId === section.id
+  private labelExists(name: string): boolean {
+    return this.labels.some(
+      label => label.name.trim() === name.trim().replace(/[ @!"(),\\]/g, '_')
     );
-  }
-
-  private todoistTaskHasLabelWithName(task: Task, labelName: string): boolean {
-    return this.todoistLabels.some(
-      label =>
-        label.name.trim() === labelName.trim() &&
-        task.labelIds.includes(label.id)
-    );
-  }
-
-  private todoistLabelExists(name: string): boolean {
-    return this.todoistLabels.some(label => label.name.trim() === name.trim());
   }
 
   private static handleTodoistError(error: TodoistRequestError) {
     switch (error.httpStatusCode) {
       case 401:
-        logger.error('todoist-sync: Todoist API access was denied.');
         inkdrop.notifications.addError('Todoist API access failed', {
           detail: 'Please check your Todoist API key in the plugin settings.',
           dismissable: true,
         });
         break;
       default:
-        logger.error('todoist-syc: Undefined API error.');
         break;
     }
   }
