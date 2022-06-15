@@ -108,7 +108,7 @@ Calls `todoist-sync:export-selected-notes`. Exports selected Inkdrop notes to a 
 ## Keyboard Shortcuts
 Todoist Sync defines the following default keyboard shortcuts.
 
-* `Ctrl-Alt-t` or `Cmd-Ald-t`  
+* `Ctrl-Alt-t` or `Cmd-Alt-t`  
 Starts a synchronisation process of all available Inkdrop notebooks and notes.
 
 ## Settings
