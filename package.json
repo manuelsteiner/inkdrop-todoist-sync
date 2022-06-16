@@ -1,7 +1,7 @@
 {
   "name": "todoist-sync",
   "main": "./lib/todoist-sync",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "An Inkdrop plugin to synchronise notebooks and notes with Todoist projects and tasks.",
   "keywords": [
     "todoist",
